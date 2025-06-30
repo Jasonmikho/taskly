@@ -1,19 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
 export default defineConfig({
+  base: '/',
   plugins: [react()],
   optimizeDeps: {
-    include: [
-      '@dnd-kit/core',
-      '@dnd-kit/sortable',
-      '@dnd-kit/utilities'
-    ]
+    include: ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities']
   },
-  preview: {
-    host: '0.0.0.0',
-    port: 10000,
-    allowedHosts: ['taskly-frontend-8ll9.onrender.com']
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          mui: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          react: ['react', 'react-dom']
+        }
+      }
+    }
   }
 })
