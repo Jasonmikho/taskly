@@ -66,7 +66,7 @@ export default function ForgotPassword({ switchToLogin }) {
     setLoading(true);
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
     try {
-      const res = await fetch(`${API_BASE}/api//verify-reset-code`, {
+      const res = await fetch(`${API_BASE}/api/verify-reset-code/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code })
