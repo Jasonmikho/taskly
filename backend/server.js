@@ -9,13 +9,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-console.log('RESET_EMAIL:', process.env.RESET_EMAIL);
-console.log('RESET_EMAIL_PASSWORD:', process.env.RESET_EMAIL_PASSWORD);
-console.log('GROQ_API_KEY:', process.env.GROQ_API_KEY);
-
 // 🔐 Initialize Firebase Admin
 if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  const serviceAccount = require(process.env.FIREBASE_CONFIG_PATH);
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
