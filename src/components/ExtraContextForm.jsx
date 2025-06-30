@@ -46,9 +46,10 @@ export default function ExtraContextForm({
 
       const userMessage = { role: 'user', content: contextPrompt };
       const newHistory = [...messageHistory, userMessage];
+      const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
       try {
-        const response = await fetch('http://localhost:3000/api/breakdown', {
+        const response = await fetch(`${API_BASE}/api/breakdown`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages: newHistory })

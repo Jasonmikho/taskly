@@ -43,8 +43,9 @@ export default function ForgotPassword({ switchToLogin }) {
     }
 
     setLoading(true);
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
     try {
-      const res = await fetch('http://localhost:3000/api/send-reset-code', {
+      const res = await fetch(`${API_BASE}/api/send-reset-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -63,9 +64,9 @@ export default function ForgotPassword({ switchToLogin }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
     try {
-      const res = await fetch('http://localhost:3000/api/verify-reset-code', {
+      const res = await fetch(`${API_BASE}/api//verify-reset-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code })
@@ -100,8 +101,10 @@ export default function ForgotPassword({ switchToLogin }) {
     }
 
     setLoading(true);
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
     try {
-      const res = await fetch('http://localhost:3000/api/reset-password', {
+      const res = await fetch(`${API_BASE}/api/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, newPassword })

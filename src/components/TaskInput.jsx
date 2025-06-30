@@ -28,9 +28,10 @@ export default function TaskInput({
 
     const userMsg = { role: 'user', content: `User Task:\n${taskInput}` };
     const newHistory = [...messageHistory, userMsg];
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
     try {
-      const response = await fetch('http://localhost:3000/api/breakdown', {
+      const response = await fetch(`${API_BASE}/api/breakdown`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newHistory })
