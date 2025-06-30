@@ -9,9 +9,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+console.log('RESET_EMAIL:', process.env.RESET_EMAIL);
+console.log('RESET_EMAIL_PASSWORD:', process.env.RESET_EMAIL_PASSWORD);
+console.log('GROQ_API_KEY:', process.env.GROQ_API_KEY);
+
 // 🔐 Initialize Firebase Admin
 if (!admin.apps.length) {
-  const serviceAccount = require('./firebaseServiceKey.json');
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -28,9 +32,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// ===========================
 // 🔮 GROQ Task Breakdown Route
-// ===========================
 app.post('/api/breakdown', async (req, res) => {
   const { messages } = req.body;
 
@@ -62,10 +64,6 @@ app.post('/api/breakdown', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch from Groq' });
   }
 });
-
-// ===========================
-// 🔐 Custom Password Reset Flow
-// ===========================
 
 // 1️⃣ Send Reset Code
 app.post('/api/send-reset-code', async (req, res) => {
@@ -139,4 +137,6 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log('✅ Server running on http://localhost:3000'));
+// 🔁 Use Render's dynamic port
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
