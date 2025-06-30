@@ -107,6 +107,7 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
         setSavedTasks([]);
         setActiveTab('new');
         resetAllTaskStates();
+        setAuthMode('login');
       }
     });
 
