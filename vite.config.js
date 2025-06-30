@@ -10,5 +10,10 @@ export default defineConfig({
       '@dnd-kit/sortable',
       '@dnd-kit/utilities'
     ]
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: 10000,
+    allowedHosts: ['taskly-frontend-8ll9.onrender.com']
   }
 })
