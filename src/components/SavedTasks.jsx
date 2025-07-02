@@ -1,5 +1,4 @@
-// ✅ Updated SavedTasks.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import TaskResults from './TaskResults';
 import { saveTask } from '../utils/firebaseUtils';
 
@@ -131,6 +130,17 @@ export default function SavedTasks({
     if (viewingTask?.id === id) onBack();
   }
 
+  function formatDateTime(date) {
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }
+
   if (!userId) {
     return (
       <div className="results-section">
@@ -160,7 +170,7 @@ export default function SavedTasks({
               <div className="task-card">
                 <strong>{viewingTask.task}</strong>
                 <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                  {new Date(viewingTask.timestamp).toLocaleString()}
+                  {formatDateTime(new Date(viewingTask.timestamp))}
                 </div>
               </div>
 
@@ -220,9 +230,10 @@ export default function SavedTasks({
               <TaskResults
                 subtasks={editedTask.subtasks}
                 isEditing={true}
-                onUpdate={(updatedSubtasks) =>
-                  setEditedTask({ ...editedTask, subtasks: updatedSubtasks })
-                }
+                onUpdate={(updatedSubtasks) => {
+                  const updatedTask = { ...editedTask, subtasks: updatedSubtasks };
+                  setEditedTask(updatedTask);
+                }}
               />
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
@@ -248,7 +259,11 @@ export default function SavedTasks({
               <div onClick={() => onSelect(t)} style={{ cursor: 'pointer' }}>
                 <strong>{t.task}</strong>
                 <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                  {new Date(t.timestamp).toLocaleString()}
+                  {t.dateTime && t.dateTime.toDate
+                    ? formatDateTime(t.dateTime.toDate())
+                    : t.dateTime
+                    ? formatDateTime(new Date(t.dateTime))
+                    : 'No date selected'}
                 </div>
               </div>
 

@@ -23,6 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
+.env.devmode
+.env.production
 /backend/.env
 /backend/firebaseServiceKey.json

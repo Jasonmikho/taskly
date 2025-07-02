@@ -42,6 +42,10 @@ const TaskStep = React.memo(({ el, idx, isEditing, onChange }) => {
   }, [el.bullets]);
 
   useEffect(() => {
+    setLocalTitle(el.title || '');
+  }, [el.title]);
+
+  useEffect(() => {
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
       inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
