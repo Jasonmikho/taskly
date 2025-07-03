@@ -15,108 +15,12 @@
     will-change: auto;
 }
 
-/* ========== Left Side Branding ========== */
-.login-left {
-    flex: 1;
+.login-wrapper.centered {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
     align-items: center;
-    padding: var(--mobile-padding);
-    color: white;
-    text-align: center;
-    transform: translateZ(0);
-}
-
-.login-left h1 {
-    font-size: var(--mobile-font-xl);
-    font-weight: 800;
-    margin: 0 0 1rem 0;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
-
-.login-left p {
-    font-size: var(--mobile-font-md);
-    opacity: 0.9;
-    margin: 0;
-    max-width: 300px;
-}
-
-@media (min-width: 768px) {
-    .login-left {
-        padding: var(--tablet-padding);
-    }
-
-    .login-left h1 {
-        font-size: var(--tablet-font-xl);
-    }
-
-    .login-left p {
-        font-size: var(--tablet-font-md);
-    }
-}
-
-@media (min-width: 1024px) {
-    .login-left {
-        padding: var(--desktop-padding);
-    }
-
-    .login-left h1 {
-        font-size: var(--desktop-font-xl);
-    }
-
-    .login-left p {
-        font-size: var(--desktop-font-md);
-    }
-}
-
-@media (max-width: 767px) {
-    .login-wrapper {
-        flex-direction: column;
-    }
-
-    .login-left {
-        flex: none;
-        padding: 2rem 1rem 1rem 1rem;
-        min-height: auto;
-    }
-
-    .login-left h1 {
-        font-size: 2rem;
-    }
-
-    .login-left p {
-        font-size: 0.95rem;
-    }
-}
-
-/* ========== Right Side Form Container ========== */
-.login-right {
-    flex: 1;
-    display: flex;
     justify-content: center;
-    align-items: center;
-    padding: var(--mobile-padding);
-    transform: translateZ(0);
-}
-
-@media (min-width: 768px) {
-    .login-right {
-        padding: var(--tablet-padding);
-    }
-}
-
-@media (min-width: 1024px) {
-    .login-right {
-        padding: var(--desktop-padding);
-    }
-}
-
-@media (max-width: 767px) {
-    .login-right {
-        flex: 1;
-        padding: 1rem;
-    }
+    padding: 2rem;
+    min-height: 100vh;
 }
 
 /* ========== Glass Card Form ========== */

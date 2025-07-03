@@ -1,4 +1,3 @@
-// ✅ Updated TaskStep.jsx
 import React, { useEffect, useRef, useState } from 'react';
 
 const TaskStep = React.memo(({ el, idx, isEditing, onChange }) => {
@@ -15,9 +14,7 @@ const TaskStep = React.memo(({ el, idx, isEditing, onChange }) => {
             const text = el.body.toLowerCase();
             let hrs = '',
                 mins = '';
-            const compound = text.match(
-                /\(?\s*(\d+)\s*hours?\)?\s*(\d+)\s*minutes?\)?/i
-            );
+            const compound = text.match(/\(?\s*(\d+)\s*hours?\)?\s*(\d+)\s*minutes?\)?/i);
             if (compound) {
                 hrs = compound[1];
                 mins = compound[2];
@@ -149,12 +146,7 @@ const TaskStep = React.memo(({ el, idx, isEditing, onChange }) => {
                                     ref={inputRef}
                                     className="task-input"
                                     value={localTitle.replace(/^\d+\.\s*/, '')}
-                                    onChange={(e) =>
-                                        logAndChange(
-                                            `${localTitle.match(/^\d+\./)?.[0] || ''} ${e.target.value}`,
-                                            'title'
-                                        )
-                                    }
+                                    onChange={(e) => logAndChange(`${localTitle.match(/^\d+\./)?.[0] || ''} ${e.target.value}`, 'title')}
                                     style={inputStyle}
                                 />
                             </div>
@@ -166,27 +158,12 @@ const TaskStep = React.memo(({ el, idx, isEditing, onChange }) => {
                                     marginTop: '0.5rem',
                                 }}
                             >
-                                <input
-                                    type="text"
-                                    value={hours}
-                                    onChange={(e) =>
-                                        handleNumericChange(
-                                            'hours',
-                                            e.target.value
-                                        )
-                                    }
-                                    className="duration-input"
-                                />
+                                <input type="text" value={hours} onChange={(e) => handleNumericChange('hours', e.target.value)} className="duration-input" />
                                 <span>hour(s)</span>
                                 <input
                                     type="text"
                                     value={minutes}
-                                    onChange={(e) =>
-                                        handleNumericChange(
-                                            'minutes',
-                                            e.target.value
-                                        )
-                                    }
+                                    onChange={(e) => handleNumericChange('minutes', e.target.value)}
                                     className="duration-input"
                                 />
                                 <span>minute(s)</span>
@@ -248,12 +225,7 @@ const TaskStep = React.memo(({ el, idx, isEditing, onChange }) => {
                                         <input
                                             type="text"
                                             value={bullet}
-                                            onChange={(e) =>
-                                                handleBulletChange(
-                                                    bulletIdx,
-                                                    e.target.value
-                                                )
-                                            }
+                                            onChange={(e) => handleBulletChange(bulletIdx, e.target.value)}
                                             style={{
                                                 flex: 1,
                                                 padding: '0.25rem',
@@ -263,9 +235,7 @@ const TaskStep = React.memo(({ el, idx, isEditing, onChange }) => {
                                             placeholder="Enter bullet point..."
                                         />
                                         <button
-                                            onClick={() =>
-                                                handleDeleteBullet(bulletIdx)
-                                            }
+                                            onClick={() => handleDeleteBullet(bulletIdx)}
                                             style={{
                                                 background: '#dc2626',
                                                 color: 'white',

@@ -136,9 +136,7 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
         return breakdown
             .split('\n')
             .flatMap((line) => {
-                const match = line.match(
-                    /^(\d+\.\s+.+?)\s*(\(\d+\s*hours?.*?\d*\s*minutes?\))$/i
-                );
+                const match = line.match(/^(\d+\.\s+.+?)\s*(\(\d+\s*hours?.*?\d*\s*minutes?\))$/i);
                 if (match) {
                     return [match[1], match[2]]; // Separate into two lines
                 }
@@ -149,30 +147,19 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
 
     function handleAIResponse(result, task, history = []) {
         if (!eventDateTime) {
-            toast.error(
-                'Please select a planned date & time before continuing.'
-            );
+            toast.error('Please select a planned date & time before continuing.');
             return;
         }
         const trimmedResult = result.trim();
-        const updatedHistory = [
-            ...messageHistory,
-            { role: 'assistant', content: result },
-        ];
+        const updatedHistory = [...messageHistory, { role: 'assistant', content: result }];
 
         console.log('[Debug] AI response received:', trimmedResult);
         console.log('[Debug] Clarification history:', history);
 
         const isQuestion = trimmedResult.toUpperCase().startsWith('QUESTION:');
-        const isBreakdown = trimmedResult
-            .toUpperCase()
-            .startsWith('BREAKDOWN:');
-        const fallback = history.find((h) =>
-            h.startsWith('PREVIEW_BREAKDOWN:')
-        );
-        const questionCount = history.filter(
-            (line) => line.startsWith('Q:') && !line.includes('[skipped]')
-        ).length;
+        const isBreakdown = trimmedResult.toUpperCase().startsWith('BREAKDOWN:');
+        const fallback = history.find((h) => h.startsWith('PREVIEW_BREAKDOWN:'));
+        const questionCount = history.filter((line) => line.startsWith('Q:') && !line.includes('[skipped]')).length;
         const lastWasSkipped = history.at(-1)?.includes('[skipped]');
         const prevWasSkipped = history.at(-2)?.includes('[skipped]');
         const twoConsecutiveSkips = lastWasSkipped && prevWasSkipped;
@@ -189,12 +176,7 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                         .replace(/BREAKDOWN:/i, '')
                         .trim();
                     const normalized = normalizeBreakdownFormat(raw);
-                    const modified = extraContext
-                        ? [
-                              `* Extra context: ${extraContext}`,
-                              ...normalized.split('\n'),
-                          ]
-                        : normalized.split('\n');
+                    const modified = extraContext ? [`* Extra context: ${extraContext}`, ...normalized.split('\n')] : normalized.split('\n');
                     const lines = modified.split('\n').filter(Boolean);
 
                     setSubtasks([]);
@@ -204,12 +186,8 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                             id: Date.now(),
                             task,
                             subtasks: lines,
-                            timestamp:
-                                eventDateTime?.toISOString() ||
-                                new Date().toISOString(),
-                            dateTime: eventDateTime
-                                ? eventDateTime.toISOString().slice(0, 16)
-                                : null,
+                            timestamp: eventDateTime?.toISOString() || new Date().toISOString(),
+                            dateTime: eventDateTime ? eventDateTime.toISOString().slice(0, 16) : null,
                         };
                         saveTask(user.uid, taskObj).then(setSavedTasks);
                     }
@@ -220,17 +198,14 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                         ...updatedHistory,
                         {
                             role: 'system',
-                            content:
-                                'Used fallback breakdown after malformed question',
+                            content: 'Used fallback breakdown after malformed question',
                         },
                     ]);
                     return;
                 }
 
                 // fallback not available, show message
-                setSkipMessage(
-                    'The AI response was invalid. Please try a new task.'
-                );
+                setSkipMessage('The AI response was invalid. Please try a new task.');
                 setSubtasks([]);
                 setSkipCount(0);
                 setScreenState('skip-message');
@@ -244,12 +219,7 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                         .replace(/BREAKDOWN:/i, '')
                         .trim();
                     const normalized = normalizeBreakdownFormat(raw);
-                    const modified = extraContext
-                        ? [
-                              `* Extra context: ${extraContext}`,
-                              ...normalized.split('\n'),
-                          ]
-                        : normalized.split('\n');
+                    const modified = extraContext ? [`* Extra context: ${extraContext}`, ...normalized.split('\n')] : normalized.split('\n');
                     const lines = modified.split('\n').filter(Boolean);
 
                     setSubtasks([]);
@@ -259,12 +229,8 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                             id: Date.now(),
                             task,
                             subtasks: lines,
-                            timestamp:
-                                eventDateTime?.toISOString() ||
-                                new Date().toISOString(),
-                            dateTime: eventDateTime
-                                ? eventDateTime.toISOString().slice(0, 16)
-                                : null,
+                            timestamp: eventDateTime?.toISOString() || new Date().toISOString(),
+                            dateTime: eventDateTime ? eventDateTime.toISOString().slice(0, 16) : null,
                         };
                         saveTask(user.uid, taskObj).then(setSavedTasks);
                     }
@@ -275,8 +241,7 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                         ...updatedHistory,
                         {
                             role: 'system',
-                            content:
-                                'Used fallback breakdown after skip/question limit',
+                            content: 'Used fallback breakdown after skip/question limit',
                         },
                     ]);
                     return;
@@ -288,17 +253,13 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                         id: Date.now(),
                         task,
                         subtasks: simple,
-                        timestamp:
-                            eventDateTime?.toISOString() ||
-                            new Date().toISOString(),
+                        timestamp: eventDateTime?.toISOString() || new Date().toISOString(),
                         dateTime: eventDateTime || null,
                     };
                     saveTask(user.uid, taskObj).then(setSavedTasks);
                 }
 
-                setSkipMessage(
-                    `Task Created: ${task}. You can always create a new task for a more detailed breakdown.`
-                );
+                setSkipMessage(`Task Created: ${task}. You can always create a new task for a more detailed breakdown.`);
                 setSubtasks([]);
                 setSkipCount(0);
                 setScreenState('skip-message');
@@ -315,27 +276,16 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
         }
 
         if (isBreakdown) {
-            console.log(
-                '[Debug] Breakdown detected, current history:',
-                history
-            );
+            console.log('[Debug] Breakdown detected, current history:', history);
 
             const raw = trimmedResult.replace(/BREAKDOWN:/i, '').trim();
             const normalized = normalizeBreakdownFormat(raw);
-            const newHistory = [
-                ...history,
-                `PREVIEW_BREAKDOWN:BREAKDOWN:\n${normalized}`,
-            ];
+            const newHistory = [...history, `PREVIEW_BREAKDOWN:BREAKDOWN:\n${normalized}`];
 
             console.log('[Debug] Normalized breakdown:', normalized);
             console.log('[Debug] New clarification history:', newHistory);
 
-            const modifiedLines = extraContext
-                ? [
-                      `* Extra context: ${extraContext}`,
-                      ...normalized.split('\n'),
-                  ]
-                : normalized.split('\n');
+            const modifiedLines = extraContext ? [`* Extra context: ${extraContext}`, ...normalized.split('\n')] : normalized.split('\n');
 
             setSubtasks(modifiedLines); // ✅ Set subtasks even if not logged in
             setClarificationHistory(newHistory);
@@ -346,9 +296,7 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
         }
         // Fallback: neither question nor breakdown
         setScreenState('question');
-        setCurrentQuestion(
-            "Sorry, that wasn't a valid breakdown. Can you clarify your task a bit?"
-        );
+        setCurrentQuestion("Sorry, that wasn't a valid breakdown. Can you clarify your task a bit?");
         setClarification('');
         setMessageHistory(updatedHistory);
     }
@@ -409,38 +357,45 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                             onClose={() => setAuthMode(null)}
                         />
                     )}
-                    {authMode === 'register' && (
-                        <Register
-                            setUser={setUser}
-                            switchToLogin={() => setAuthMode('login')}
-                            onClose={() => setAuthMode(null)}
-                        />
-                    )}
-                    {authMode === 'forgot' && (
-                        <ForgotPassword
-                            switchToLogin={() => setAuthMode('login')}
-                            onClose={() => setAuthMode(null)}
-                        />
-                    )}
+                    {authMode === 'register' && <Register setUser={setUser} switchToLogin={() => setAuthMode('login')} onClose={() => setAuthMode(null)} />}
+                    {authMode === 'forgot' && <ForgotPassword switchToLogin={() => setAuthMode('login')} onClose={() => setAuthMode(null)} />}
                 </div>
             )}
 
             <div className="app-wrapper">
                 <div className="app-container">
                     <div className="app-header">
-                        <h1 className="app-title">Taskly</h1>
-                        <p className="app-subtitle">
-                            Break down complex tasks into manageable steps
-                        </p>
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.65rem',
+                                flexWrap: 'wrap',
+                            }}
+                        >
+                            <img
+                                src="/croppedLogo.png"
+                                alt="Taskly Icon"
+                                style={{
+                                    height: '42px',
+                                    width: '42px',
+                                    objectFit: 'contain',
+                                    verticalAlign: 'middle',
+                                    display: 'inline-block',
+                                }}
+                            />
+                            <h1 className="app-title" style={{ margin: 0, padding: 0, lineHeight: 1 }}>
+                                Taskly
+                            </h1>
+                        </div>
+                        <p className="app-subtitle">Break down complex tasks into manageable steps</p>
                     </div>
 
                     <div className="app-nav">
                         <div className="nav-wrapper">
                             <div className="nav-buttons">
-                                <button
-                                    onClick={resetToNewTask}
-                                    className={`nav-btn ${activeTab === 'new' ? 'active' : ''}`}
-                                >
+                                <button onClick={resetToNewTask} className={`nav-btn ${activeTab === 'new' ? 'active' : ''}`}>
                                     <Plus size={18} /> New Task
                                 </button>
                                 <button
@@ -465,46 +420,21 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                         </div>
                         <div className="top-right-menu" ref={menuRef}>
                             <div className="menu-button-wrapper">
-                                <button
-                                    onClick={() => setShowMenu((prev) => !prev)}
-                                    className="nav-btn"
-                                >
+                                <button onClick={() => setShowMenu((prev) => !prev)} className="nav-btn">
                                     ☰
                                 </button>
                                 {showMenu && (
                                     <div className="dropdown-menu">
                                         {!user && (
                                             <>
-                                                <button
-                                                    onClick={() =>
-                                                        setAuthMode('login')
-                                                    }
-                                                >
-                                                    Log In
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        setAuthMode('register')
-                                                    }
-                                                >
-                                                    Sign Up
-                                                </button>
+                                                <button onClick={() => setAuthMode('login')}>Log In</button>
+                                                <button onClick={() => setAuthMode('register')}>Sign Up</button>
                                             </>
                                         )}
                                         {user && (
                                             <>
-                                                <button
-                                                    onClick={() =>
-                                                        alert(
-                                                            'My Account – TBD'
-                                                        )
-                                                    }
-                                                >
-                                                    My Account
-                                                </button>
-                                                <button onClick={handleLogout}>
-                                                    Log Out
-                                                </button>
+                                                <button onClick={() => alert('My Account – TBD')}>My Account</button>
+                                                <button onClick={handleLogout}>Log Out</button>
                                             </>
                                         )}
                                     </div>
@@ -540,16 +470,11 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                                             setLoading={setLoading}
                                             handleAIResponse={handleAIResponse}
                                             messageHistory={messageHistory}
-                                            setMessageHistory={
-                                                setMessageHistory
-                                            }
+                                            setMessageHistory={setMessageHistory}
                                             eventDateTime={eventDateTime}
                                         />
                                         <div className="datetime-input-group">
-                                            <DateTimePicker
-                                                value={eventDateTime}
-                                                onChange={setEventDateTime}
-                                            />
+                                            <DateTimePicker value={eventDateTime} onChange={setEventDateTime} />
                                         </div>
                                     </div>
                                 )}
@@ -559,12 +484,8 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                                         clarification={clarification}
                                         setClarification={setClarification}
                                         currentQuestion={currentQuestion}
-                                        clarificationHistory={
-                                            clarificationHistory
-                                        }
-                                        setClarificationHistory={
-                                            setClarificationHistory
-                                        }
+                                        clarificationHistory={clarificationHistory}
+                                        setClarificationHistory={setClarificationHistory}
                                         taskInput={taskInput}
                                         setLoading={setLoading}
                                         handleAIResponse={handleAIResponse}
@@ -579,18 +500,12 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                                     <ExtraContextForm
                                         extraContext={extraContext}
                                         setExtraContext={setExtraContext}
-                                        clarificationHistory={
-                                            clarificationHistory
-                                        }
+                                        clarificationHistory={clarificationHistory}
                                         taskInput={taskInput}
                                         setLoading={setLoading}
                                         handleAIResponse={handleAIResponse}
-                                        setClarificationHistory={
-                                            setClarificationHistory
-                                        }
-                                        setAwaitingExtraContext={() =>
-                                            setScreenState('results')
-                                        }
+                                        setClarificationHistory={setClarificationHistory}
+                                        setAwaitingExtraContext={() => setScreenState('results')}
                                         setSubtasks={setSubtasks}
                                         setSavedTasks={setSavedTasks}
                                         loading={loading}
@@ -601,9 +516,7 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                                     />
                                 )}
 
-                                {screenState === 'results' && (
-                                    <TaskResults subtasks={subtasks} />
-                                )}
+                                {screenState === 'results' && <TaskResults subtasks={subtasks} />}
 
                                 {screenState === 'skip-message' && (
                                     <div className="skip-message-container">
@@ -620,11 +533,7 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                                         >
                                             <p>{skipMessage}</p>
                                         </div>
-                                        <button
-                                            onClick={resetToNewTask}
-                                            className="submit-btn secondary"
-                                            style={{ marginTop: '1rem' }}
-                                        >
+                                        <button onClick={resetToNewTask} className="submit-btn secondary" style={{ marginTop: '1rem' }}>
                                             Create New Task
                                         </button>
                                     </div>
@@ -632,7 +541,10 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                             </>
                         )}
                         {activeTab === 'calendar' && (
-                            <CalendarView tasks={savedTasks} />
+                            <>
+                                {console.log('[App.jsx] Rendering CalendarView with savedTasks:', savedTasks)}
+                                <CalendarView tasks={savedTasks} />
+                            </>
                         )}
                     </div>
                 </div>

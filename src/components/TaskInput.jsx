@@ -1,16 +1,7 @@
 import React from 'react';
 import { toast } from 'react-toastify';
 
-export default function TaskInput({
-    taskInput,
-    setTaskInput,
-    loading,
-    setLoading,
-    handleAIResponse,
-    messageHistory,
-    setMessageHistory,
-    eventDateTime, // ✅ new prop
-}) {
+export default function TaskInput({ taskInput, setTaskInput, loading, setLoading, handleAIResponse, messageHistory, setMessageHistory, eventDateTime }) {
     async function handleSubmit(e) {
         if (e) e.preventDefault();
 
@@ -20,9 +11,7 @@ export default function TaskInput({
         }
 
         if (!eventDateTime) {
-            toast.error(
-                'Please select a planned date & time before continuing.'
-            );
+            toast.error('Please select a planned date & time before continuing.');
             return;
         }
 
@@ -42,10 +31,7 @@ export default function TaskInput({
             const data = await response.json();
             const result = data.result || '';
 
-            setMessageHistory([
-                ...newHistory,
-                { role: 'assistant', content: result },
-            ]);
+            setMessageHistory([...newHistory, { role: 'assistant', content: result }]);
             handleAIResponse(result, taskInput, []);
         } catch (err) {
             toast.error('Something went wrong with the AI request.');
@@ -56,11 +42,7 @@ export default function TaskInput({
     }
 
     return (
-        <form
-            onSubmit={handleSubmit}
-            className="input-group"
-            style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
-        >
+        <form onSubmit={handleSubmit} className="input-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <input
                 className="task-input"
                 type="text"
@@ -69,12 +51,7 @@ export default function TaskInput({
                 placeholder="Enter a task (e.g., Finish essay draft)"
                 disabled={loading}
             />
-            <button
-                type="submit"
-                onClick={handleSubmit}
-                className="submit-btn"
-                disabled={loading}
-            >
+            <button type="submit" onClick={handleSubmit} className="submit-btn" disabled={loading}>
                 {loading ? 'Thinking...' : 'Break It Down'}
             </button>
         </form>

@@ -11,17 +11,8 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks: {
-                    firebase: [
-                        'firebase/app',
-                        'firebase/auth',
-                        'firebase/firestore',
-                    ],
-                    mui: [
-                        '@mui/material',
-                        '@mui/icons-material',
-                        '@emotion/react',
-                        '@emotion/styled',
-                    ],
+                    firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+                    mui: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
                     react: ['react', 'react-dom'],
                 },
             },

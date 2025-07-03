@@ -7,6 +7,7 @@ import getDay from 'date-fns/getDay';
 import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import TaskResults from './TaskResults';
+import './CalendarView.css';
 
 const locales = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({
@@ -21,9 +22,9 @@ export default function CalendarView({ tasks }) {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [currentView, setCurrentView] = useState('month');
     const [currentDate, setCurrentDate] = useState(new Date());
-    const taskCardRef = useRef(null); // ✅ Ref for the selected task section
+    const taskCardRef = useRef(null);
 
-    console.log('[CalendarView] Raw tasks received:', tasks);
+    // Updated duration calculation logic for your CalendarView component
 
     const events = useMemo(() => {
         const filtered = tasks
@@ -31,34 +32,72 @@ export default function CalendarView({ tasks }) {
             .map((t) => {
                 const raw = t.dateTime || t.timestamp;
 
-                const baseTime = t.dateTime?.toDate
-                    ? t.dateTime.toDate()
-                    : new Date(raw);
-
-                if (isNaN(baseTime.getTime())) {
-                    console.warn(
-                        '[CalendarView] Skipping invalid date for task:',
-                        t
-                    );
+                let baseTime;
+                if (t.dateTime?.toDate) {
+                    baseTime = t.dateTime.toDate();
+                } else if (typeof raw === 'string') {
+                    baseTime = new Date(raw);
+                } else {
+                    console.warn('[Calendar] Invalid or missing dateTime/timestamp for task:', t);
                     return null;
                 }
 
-                let totalMinutes = 0;
-                (t.subtasks || []).forEach((sub) => {
-                    const match = sub?.body?.match(
-                        /\((?:(\d+)\s*hours?)?\s*(?:(\d+)\s*minutes?)?\)/i
-                    );
-                    if (match) {
-                        const h = parseInt(match[1]) || 0;
-                        const m = parseInt(match[2]) || 0;
-                        totalMinutes += h * 60 + m;
-                    }
-                });
+                if (isNaN(baseTime.getTime())) {
+                    console.warn('[Calendar] Skipping task with invalid date:', t);
+                    return null;
+                }
 
-                const durationMs =
-                    totalMinutes > 0
-                        ? totalMinutes * 60 * 1000
-                        : 60 * 60 * 1000;
+                let durationMs = 60 * 60 * 1000; // default to 1 hour
+
+                // Try multiple sources for duration in priority order
+                if (t.totalDurationOverride) {
+                    // Explicit override field
+                    const [h, m] = t.totalDurationOverride.split(':').map(Number);
+                    const overrideMinutes = (h || 0) * 60 + (m || 0);
+                    if (overrideMinutes > 0) {
+                        durationMs = overrideMinutes * 60 * 1000;
+                    }
+                } else if (t.totalEstimatedTime) {
+                    // Check if there's a totalEstimatedTime field
+                    const timeMatch = t.totalEstimatedTime.match(/(\d+)\s*hrs?\s*(\d+)\s*mins?/i);
+                    if (timeMatch) {
+                        const hours = parseInt(timeMatch[1]) || 0;
+                        const minutes = parseInt(timeMatch[2]) || 0;
+                        const totalMinutes = hours * 60 + minutes;
+                        if (totalMinutes > 0) {
+                            durationMs = totalMinutes * 60 * 1000;
+                        }
+                    }
+                } else if (t.estimatedTime) {
+                    // Check if there's an estimatedTime field
+                    const timeMatch = t.estimatedTime.match(/(\d+)\s*hrs?\s*(\d+)\s*mins?/i);
+                    if (timeMatch) {
+                        const hours = parseInt(timeMatch[1]) || 0;
+                        const minutes = parseInt(timeMatch[2]) || 0;
+                        const totalMinutes = hours * 60 + minutes;
+                        if (totalMinutes > 0) {
+                            durationMs = totalMinutes * 60 * 1000;
+                        }
+                    }
+                } else {
+                    // Calculate from subtasks - handle both formats
+                    let totalMinutes = 0;
+                    (t.subtasks || []).forEach((sub) => {
+                        // Handle case where subtask is a string (your current format)
+                        const subtaskText = typeof sub === 'string' ? sub : sub?.body || '';
+
+                        // Look for time patterns like "(15 minutes)" or "(2 hours)" or "(1 hour 30 minutes)"
+                        const timeMatch = subtaskText.match(/\((?:(\d+)\s*hours?)?\s*(?:(\d+)\s*minutes?)?\)/i);
+                        if (timeMatch) {
+                            const h = parseInt(timeMatch[1]) || 0;
+                            const m = parseInt(timeMatch[2]) || 0;
+                            totalMinutes += h * 60 + m;
+                        }
+                    });
+                    if (totalMinutes > 0) {
+                        durationMs = totalMinutes * 60 * 1000;
+                    }
+                }
 
                 const event = {
                     id: t.id,
@@ -68,8 +107,6 @@ export default function CalendarView({ tasks }) {
                     allDay: false,
                     ...t,
                 };
-
-                console.log('[CalendarView] Final event:', event);
                 return event;
             })
             .filter(Boolean);
@@ -81,7 +118,6 @@ export default function CalendarView({ tasks }) {
         return filtered;
     }, [tasks]);
 
-    // ✅ Scroll to selected task card on open
     useEffect(() => {
         if (selectedEvent && taskCardRef.current) {
             setTimeout(() => {
@@ -97,10 +133,11 @@ export default function CalendarView({ tasks }) {
         <div className="results-section">
             <div
                 style={{
-                    height: 'calc(100vh - 180px)',
+                    minHeight: '650px',
                     background: 'white',
                     borderRadius: '1rem',
                     padding: '1rem',
+                    overflow: 'auto',
                 }}
             >
                 <Calendar
@@ -120,11 +157,7 @@ export default function CalendarView({ tasks }) {
             </div>
 
             {selectedEvent && (
-                <div
-                    ref={taskCardRef}
-                    className="task-card"
-                    style={{ marginTop: '1.5rem' }}
-                >
+                <div ref={taskCardRef} className="task-card" style={{ marginTop: '1.5rem' }}>
                     <h3>{selectedEvent.title}</h3>
                     <div
                         style={{
@@ -136,11 +169,7 @@ export default function CalendarView({ tasks }) {
                         {new Date(selectedEvent.start).toLocaleString()}
                     </div>
                     <TaskResults subtasks={selectedEvent.subtasks} />
-                    <button
-                        className="submit-btn secondary"
-                        onClick={() => setSelectedEvent(null)}
-                        style={{ marginTop: '1rem' }}
-                    >
+                    <button className="submit-btn secondary" onClick={() => setSelectedEvent(null)} style={{ marginTop: '1rem' }}>
                         Close
                     </button>
                 </div>

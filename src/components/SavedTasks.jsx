@@ -2,15 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import TaskResults from './TaskResults';
 import { saveTask } from '../utils/firebaseUtils';
 
-export default function SavedTasks({
-    tasks,
-    onSelect,
-    onDelete,
-    viewingTask,
-    onBack,
-    setSavedTasks,
-    userId,
-}) {
+export default function SavedTasks({ tasks, onSelect, onDelete, viewingTask, onBack, setSavedTasks, userId }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTask, setEditedTask] = useState(viewingTask || null);
     const [originalTask, setOriginalTask] = useState(viewingTask || null);
@@ -47,10 +39,7 @@ export default function SavedTasks({
                                   type: 'timedBlock',
                                   id: `imported-${Date.now()}-${Math.random()}`,
                               };
-                          } else if (
-                              typeof line === 'object' &&
-                              line !== null
-                          ) {
+                          } else if (typeof line === 'object' && line !== null) {
                               return {
                                   ...line,
                                   completed: line.completed ?? false,
@@ -88,16 +77,11 @@ export default function SavedTasks({
         }
 
         const isTitleDuplicate = tasks.some(
-            (t) =>
-                t.task.trim().toLowerCase() ===
-                    editedTask.task.trim().toLowerCase() &&
-                t.id !== (updateExisting ? originalTask.id : null)
+            (t) => t.task.trim().toLowerCase() === editedTask.task.trim().toLowerCase() && t.id !== (updateExisting ? originalTask.id : null)
         );
 
         if (!updateExisting && isTitleDuplicate) {
-            setWarningMessage(
-                'A task with this title already exists. Please use a unique title.'
-            );
+            setWarningMessage('A task with this title already exists. Please use a unique title.');
             scrollToWarning();
             return;
         }
@@ -108,10 +92,28 @@ export default function SavedTasks({
             return;
         }
 
+        let totalMinutes = 0;
+        (editedTask.subtasks || []).forEach((sub) => {
+            const match = sub?.body?.match(/\((?:(\d+)\s*hours?)?\s*(?:(\d+)\s*minutes?)?\)/i);
+            if (match) {
+                const h = parseInt(match[1]) || 0;
+                const m = parseInt(match[2]) || 0;
+                totalMinutes += h * 60 + m;
+            }
+        });
+
+        let totalDurationOverride = null;
+        if (totalMinutes > 0) {
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            totalDurationOverride = `${h}:${m.toString().padStart(2, '0')}`;
+        }
+
         const taskRecord = {
             ...editedTask,
             id: updateExisting ? originalTask.id : Date.now(),
             timestamp: editedTask.dateTime || new Date().toISOString(),
+            totalDurationOverride,
         };
 
         const updated = await saveTask(userId, taskRecord);
@@ -159,9 +161,7 @@ export default function SavedTasks({
     if (!userId) {
         return (
             <div className="results-section">
-                <div className="task-card">
-                    🔒 Please log in to view and manage saved tasks.
-                </div>
+                <div className="task-card">🔒 Please log in to view and manage saved tasks.</div>
             </div>
         );
     }
@@ -192,15 +192,10 @@ export default function SavedTasks({
                                         color: '#64748b',
                                     }}
                                 >
-                                    {viewingTask.timestamp &&
-                                    viewingTask.timestamp.toDate
-                                        ? formatDateTime(
-                                              viewingTask.timestamp.toDate()
-                                          )
-                                        : viewingTask.timestamp
-                                          ? formatDateTime(
-                                                new Date(viewingTask.timestamp)
-                                            )
+                                    {viewingTask.dateTime && viewingTask.dateTime.toDate
+                                        ? formatDateTime(viewingTask.dateTime.toDate())
+                                        : viewingTask.dateTime
+                                          ? formatDateTime(new Date(viewingTask.dateTime))
                                           : 'No date selected'}
                                 </div>
                             </div>
@@ -226,8 +221,7 @@ export default function SavedTasks({
                                             marginBottom: '0.5rem',
                                         }}
                                     >
-                                        Are you sure you want to delete this
-                                        task?
+                                        Are you sure you want to delete this task?
                                     </div>
                                     <div
                                         style={{
@@ -235,12 +229,7 @@ export default function SavedTasks({
                                             gap: '0.5rem',
                                         }}
                                     >
-                                        <button
-                                            className="submit-btn secondary"
-                                            onClick={() =>
-                                                setConfirmDeleteId(null)
-                                            }
-                                        >
+                                        <button className="submit-btn secondary" onClick={() => setConfirmDeleteId(null)}>
                                             Cancel
                                         </button>
                                         <button
@@ -248,9 +237,7 @@ export default function SavedTasks({
                                             style={{
                                                 backgroundColor: '#ef4444',
                                             }}
-                                            onClick={() =>
-                                                confirmDelete(viewingTask.id)
-                                            }
+                                            onClick={() => confirmDelete(viewingTask.id)}
                                         >
                                             Confirm Delete
                                         </button>
@@ -274,13 +261,7 @@ export default function SavedTasks({
                                     >
                                         Edit
                                     </button>
-                                    <button
-                                        className="submit-btn secondary"
-                                        style={{ color: '#ef4444' }}
-                                        onClick={() =>
-                                            setConfirmDeleteId(viewingTask.id)
-                                        }
-                                    >
+                                    <button className="submit-btn secondary" style={{ color: '#ef4444' }} onClick={() => setConfirmDeleteId(viewingTask.id)}>
                                         Delete
                                     </button>
                                 </div>
@@ -291,9 +272,7 @@ export default function SavedTasks({
                             <input
                                 className="task-input"
                                 value={editedTask.task}
-                                onChange={(e) =>
-                                    handleChangeTitle(e.target.value)
-                                }
+                                onChange={(e) => handleChangeTitle(e.target.value)}
                                 style={{ marginBottom: '1rem' }}
                                 placeholder="Enter task title"
                             />
@@ -331,22 +310,13 @@ export default function SavedTasks({
                                     marginTop: '1rem',
                                 }}
                             >
-                                <button
-                                    className="submit-btn"
-                                    onClick={() => handleSave(true)}
-                                >
+                                <button className="submit-btn" onClick={() => handleSave(true)}>
                                     Save Changes
                                 </button>
-                                <button
-                                    className="submit-btn secondary"
-                                    onClick={() => handleSave(false)}
-                                >
+                                <button className="submit-btn secondary" onClick={() => handleSave(false)}>
                                     Save as New
                                 </button>
-                                <button
-                                    className="submit-btn secondary"
-                                    onClick={handleCancelEdit}
-                                >
+                                <button className="submit-btn secondary" onClick={handleCancelEdit}>
                                     Cancel
                                 </button>
                             </div>
@@ -364,15 +334,8 @@ export default function SavedTasks({
                     <div className="task-card">No saved tasks yet.</div>
                 ) : (
                     tasks.map((t) => (
-                        <div
-                            key={t.id}
-                            className="task-card"
-                            style={{ position: 'relative' }}
-                        >
-                            <div
-                                onClick={() => onSelect(t)}
-                                style={{ cursor: 'pointer' }}
-                            >
+                        <div key={t.id} className="task-card" style={{ position: 'relative' }}>
+                            <div onClick={() => onSelect(t)} style={{ cursor: 'pointer' }}>
                                 <strong>{t.task}</strong>
                                 <div
                                     style={{
@@ -405,12 +368,7 @@ export default function SavedTasks({
                                             gap: '0.5rem',
                                         }}
                                     >
-                                        <button
-                                            onClick={() =>
-                                                setConfirmDeleteId(null)
-                                            }
-                                            className="submit-btn secondary"
-                                        >
+                                        <button onClick={() => setConfirmDeleteId(null)} className="submit-btn secondary">
                                             Cancel
                                         </button>
                                         <button

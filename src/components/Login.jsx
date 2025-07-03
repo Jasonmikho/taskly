@@ -1,17 +1,9 @@
 import { useState } from 'react';
-import {
-    signInWithEmailAndPassword,
-    sendPasswordResetEmail,
-} from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../firebase';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
-export default function Login({
-    setUser,
-    switchToRegister,
-    switchToForgot,
-    onClose,
-}) {
+export default function Login({ setUser, switchToRegister, switchToForgot, onClose }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -34,11 +26,7 @@ export default function Login({
         }
 
         try {
-            const userCredential = await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
             if (!userCredential.user.emailVerified) {
                 setError('Email not verified. Please check your inbox.');
                 setLoading(false);
@@ -96,90 +84,90 @@ export default function Login({
     }
 
     return (
-        <div className="login-wrapper">
-            <div className="login-left">
-                <h1>Taskly</h1>
-                <p>Your AI-powered productivity assistant</p>
-            </div>
-
-            <div className="login-right">
-                <form className="login-glass-card" onSubmit={handleLogin}>
-                    <h2>Welcome Back!</h2>
-
-                    <div
-                        className={`input-icon-group ${emailFocused && !emailValid ? 'input-error' : ''}`}
+        <div className="login-wrapper centered">
+            <form className="login-glass-card" onSubmit={handleLogin}>
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '1.25rem',
+                    }}
+                >
+                    <img
+                        src="/croppedLogo.png"
+                        alt="Taskly Icon"
+                        style={{
+                            height: '42px',
+                            width: '42px',
+                            objectFit: 'contain',
+                        }}
+                    />
+                    <h1
+                        style={{
+                            fontSize: '2rem',
+                            fontWeight: '800',
+                            margin: 0,
+                            background: 'linear-gradient(45deg, #cc5c4c, #3a3f91)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            display: 'inline-block',
+                            textShadow: '0 1px 1px rgba(0, 0, 0, 0.05)',
+                        }}
                     >
-                        <Mail size={18} />
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            value={email}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                setEmail(value);
-                                setEmailValid(
-                                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-                                );
-                            }}
-                            onFocus={() => setEmailFocused(true)}
-                            onBlur={() => setEmailFocused(false)}
-                            disabled={loading}
-                        />
-                        <span className="input-placeholder-button" />
-                    </div>
+                        Taskly
+                    </h1>
+                </div>
 
-                    <div className="input-icon-group">
-                        <Lock size={18} />
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            disabled={loading}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            disabled={loading}
-                        >
-                            {showPassword ? (
-                                <EyeOff size={18} />
-                            ) : (
-                                <Eye size={18} />
-                            )}
-                        </button>
-                    </div>
+                <h2>Welcome Back!</h2>
 
-                    {error && <div className="login-error">{error}</div>}
-                    {resetStatus && (
-                        <div className="login-success">{resetStatus}</div>
-                    )}
-
-                    <button
-                        type="submit"
-                        className="login-btn primary"
+                <div className={`input-icon-group ${emailFocused && !emailValid ? 'input-error' : ''}`}>
+                    <Mail size={18} />
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setEmail(value);
+                            setEmailValid(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
+                        }}
+                        onFocus={() => setEmailFocused(true)}
+                        onBlur={() => setEmailFocused(false)}
                         disabled={loading}
-                    >
-                        {loading ? 'Logging in...' : 'Login'}
-                    </button>
-                    <button
-                        type="button"
-                        className="login-btn link"
-                        onClick={switchToForgot}
+                    />
+                    <span className="input-placeholder-button" />
+                </div>
+
+                <div className="input-icon-group">
+                    <Lock size={18} />
+                    <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         disabled={loading}
-                    >
-                        Forgot Password?
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} disabled={loading}>
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
-                    <button
-                        type="button"
-                        className="login-btn secondary"
-                        onClick={switchToRegister}
-                        disabled={loading}
-                    >
-                        Need an account?
-                    </button>
-                </form>
-            </div>
+                </div>
+
+                {error && <div className="login-error">{error}</div>}
+                {resetStatus && <div className="login-success">{resetStatus}</div>}
+
+                <button type="submit" className="login-btn primary" disabled={loading}>
+                    {loading ? 'Logging in...' : 'Login'}
+                </button>
+                <button type="button" className="login-btn link" onClick={switchToForgot} disabled={loading}>
+                    Forgot Password?
+                </button>
+                <button type="button" className="login-btn secondary" onClick={switchToRegister} disabled={loading}>
+                    Need an account?
+                </button>
+            </form>
         </div>
     );
 }

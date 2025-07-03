@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔐 Initialize Firebase Admin
+// Initialize Firebase Admin
 if (!admin.apps.length) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
@@ -28,14 +28,12 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// 🔮 GROQ Task Breakdown Route
+// GROQ Task Breakdown Route
 app.post('/api/breakdown', async (req, res) => {
     const { messages } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
-        return res
-            .status(400)
-            .json({ error: 'Missing or invalid message history' });
+        return res.status(400).json({ error: 'Missing or invalid message history' });
     }
 
     try {
@@ -62,7 +60,7 @@ app.post('/api/breakdown', async (req, res) => {
     }
 });
 
-// 1️⃣ Send Reset Code
+// Send Reset Code
 app.post('/api/send-reset-code', async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).send('Email required');
@@ -100,7 +98,7 @@ The Taskly Team`,
     }
 });
 
-// 2️⃣ Verify Code
+// Verify Code
 app.post('/api/verify-reset-code', async (req, res) => {
     const { email, code } = req.body;
     const docRef = db.collection('resetCodes').doc(email);
@@ -119,7 +117,7 @@ app.post('/api/verify-reset-code', async (req, res) => {
     res.send('Code verified');
 });
 
-// 3️⃣ Reset Password
+// Reset Password
 app.post('/api/reset-password', async (req, res) => {
     const { email, newPassword } = req.body;
 
@@ -134,8 +132,6 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
-// 🔁 Use Render's dynamic port
+// Use Render's dynamic port
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-    console.log(`✅ Server running on http://localhost:${PORT}`)
-);
+app.listen(PORT, () => console.log(`!! Server running on http://localhost:${PORT} !!`));

@@ -49,10 +49,7 @@ export default function ClarificationForm({
             const data = await response.json();
             const result = data.result || '';
 
-            setMessageHistory([
-                ...newHistory,
-                { role: 'assistant', content: result },
-            ]);
+            setMessageHistory([...newHistory, { role: 'assistant', content: result }]);
             handleAIResponse(result, taskInput, updatedHistory);
         } catch (error) {
             console.error('Error submitting clarification:', error);
@@ -66,8 +63,7 @@ export default function ClarificationForm({
         <div className="clarification-form">
             <div className="clarification-label">
                 <p>
-                    To help break down the task "<strong>{taskInput}</strong>",
-                    I have a question:
+                    To help break down the task "<strong>{taskInput}</strong>", I have a question:
                 </p>
             </div>
 
@@ -93,24 +89,11 @@ export default function ClarificationForm({
                     disabled={loading}
                 />
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button
-                        type="submit"
-                        className="submit-btn"
-                        disabled={loading || !clarification.trim()}
-                    >
-                        {loading && activeAction === 'submit'
-                            ? 'Thinking...'
-                            : 'Submit Answer'}
+                    <button type="submit" className="submit-btn" disabled={loading || !clarification.trim()}>
+                        {loading && activeAction === 'submit' ? 'Thinking...' : 'Submit Answer'}
                     </button>
-                    <button
-                        type="button"
-                        className="submit-btn secondary"
-                        onClick={(e) => handleSubmit(e, true)}
-                        disabled={loading}
-                    >
-                        {loading && activeAction === 'skip'
-                            ? 'Skipping...'
-                            : 'Skip Question'}
+                    <button type="button" className="submit-btn secondary" onClick={(e) => handleSubmit(e, true)} disabled={loading}>
+                        {loading && activeAction === 'skip' ? 'Skipping...' : 'Skip Question'}
                     </button>
                 </div>
             </form>

@@ -17,9 +17,7 @@ export default function MyDateTimePicker({ value, onChange }) {
     // Prevent AM/PM scroll glitch
     useEffect(() => {
         const observer = new MutationObserver(() => {
-            const meridiemList = document.querySelector(
-                '[aria-label="Select meridiem"]'
-            );
+            const meridiemList = document.querySelector('[aria-label="Select meridiem"]');
             if (!meridiemList) return;
 
             meridiemList.scrollTop = 0;
@@ -59,12 +57,7 @@ export default function MyDateTimePicker({ value, onChange }) {
                             ? {
                                   endAdornment: (
                                       <InputAdornment position="end">
-                                          <IconButton
-                                              onClick={() => onChange(null)}
-                                              aria-label="Clear selected date and time"
-                                              edge="end"
-                                              size="small"
-                                          >
+                                          <IconButton onClick={() => onChange(null)} aria-label="Clear selected date and time" edge="end" size="small">
                                               <ClearIcon />
                                           </IconButton>
                                       </InputAdornment>

@@ -1,0 +1,215 @@
+/* Base container */
+.rbc-calendar {
+    background-color: white;
+    color: #1e293b;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+}
+
+/* Toolbar */
+.rbc-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    background: white;
+    margin-bottom: 12px;
+}
+
+.rbc-toolbar-label {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.rbc-toolbar button {
+    color: #1e293b;
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin: 0 3px;
+    font-size: 13px;
+    transition: all 0.15s ease-in-out;
+}
+
+.rbc-toolbar button:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.rbc-toolbar button.rbc-active {
+    background-color: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+/* Header (Sun–Sat + month) */
+.rbc-header {
+    background-color: #f8fafc;
+    padding: 6px 4px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: center;
+    font-weight: 600;
+    font-size: 13px;
+    color: #334155;
+}
+
+/* Month date cell numbers */
+.rbc-date-cell {
+    text-align: right;
+    padding: 4px 6px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.rbc-date-cell a {
+    text-decoration: none;
+    color: inherit;
+    font-weight: 500;
+}
+
+/* Today highlight */
+.rbc-today {
+    background-color: #eff6ff;
+}
+
+.rbc-today .rbc-date-cell a {
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+/* Month/Week/Day event box */
+.rbc-event,
+.rbc-agenda-event-cell {
+    background-color: #2563eb;
+    color: white;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+    border: none;
+}
+
+.rbc-event:hover {
+    background-color: #1e40af;
+}
+
+/* Week/Day time grid */
+.rbc-time-content,
+.rbc-timeslot-group,
+.rbc-time-view {
+    border-color: #e2e8f0;
+    background-color: white;
+}
+
+.rbc-time-slot {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Time labels */
+.rbc-label,
+.rbc-time-header-gutter {
+    font-size: 12px;
+    color: #64748b;
+    background-color: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+}
+
+/* Agenda view */
+.rbc-agenda-view,
+.rbc-agenda-table {
+    font-size: 13px;
+    background-color: white;
+    color: #334155;
+}
+
+.rbc-agenda-table th {
+    background-color: #f8fafc;
+    padding: 8px 6px;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 600;
+}
+
+.rbc-agenda-table td {
+    padding: 6px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+/* Selected cell */
+.rbc-selected-cell {
+    background-color: #f1f5f9;
+}
+
+/* Box model reset for calendar */
+.rbc-calendar * {
+    box-sizing: border-box;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .rbc-toolbar-label {
+        font-size: 14px;
+    }
+
+    .rbc-toolbar button {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    .rbc-header {
+        font-size: 11px;
+        padding: 4px;
+    }
+
+    .rbc-date-cell {
+        font-size: 11px;
+    }
+}
+/* Allow full calendar height in month view */
+.rbc-month-view {
+    min-height: 650px !important;
+    height: auto !important;
+}
+
+/* Prevent container from cutting off content */
+.rbc-time-view,
+.rbc-calendar {
+    height: auto !important;
+    min-height: 600px !important;
+}
+
+/* Stretch inner grid if needed */
+.rbc-month-row {
+    flex: 1 1 auto !important;
+}
+
+.rbc-event.rbc-selected {
+    background-color: #2563eb !important; /* match regular */
+    color: white !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+/* Hide the "All-Day" row ONLY in Week View */
+.rbc-time-view .rbc-allday-cell {
+    display: none;
+    height: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+}
+
+/* Remove residual spacing caused by hiding the all-day row */
+.rbc-time-view .rbc-time-header {
+    border-bottom: none;
+    margin-bottom: -1px; /* Tighten the spacing */
+}
+
+/* adjust padding on header cells */
+.rbc-time-view .rbc-header {
+    padding: 0.25rem 0;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #334155;
+    text-align: center;
+}

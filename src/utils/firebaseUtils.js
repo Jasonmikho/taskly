@@ -1,11 +1,5 @@
 import { db } from '../firebase';
-import {
-    collection,
-    getDocs,
-    setDoc,
-    doc,
-    deleteDoc,
-} from 'firebase/firestore';
+import { collection, getDocs, setDoc, doc, deleteDoc } from 'firebase/firestore';
 
 // Get all saved tasks for a user
 export async function getSavedTasks(userId) {

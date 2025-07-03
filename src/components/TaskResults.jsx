@@ -1,31 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TaskStep from './TaskStep';
-import {
-    DndContext,
-    closestCenter,
-    PointerSensor,
-    useSensor,
-    useSensors,
-} from '@dnd-kit/core';
-import {
-    arrayMove,
-    SortableContext,
-    useSortable,
-    verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import useConfetti from '../hooks/useConfetti';
 
-function SortableItem({
-    id,
-    index,
-    el,
-    isEditing,
-    onChange,
-    onDelete,
-    onToggleComplete,
-}) {
-    const { attributes, listeners, setNodeRef, transform, transition } =
-        useSortable({ id });
+function SortableItem({ id, index, el, isEditing, onChange, onDelete, onToggleComplete }) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -36,24 +17,14 @@ function SortableItem({
     };
 
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            onClick={() => !isEditing && onToggleComplete(index)}
-        >
+        <div ref={setNodeRef} style={style} {...attributes} onClick={() => !isEditing && onToggleComplete(index)}>
             <div
                 style={{
                     flex: 1,
                     textDecoration: el.completed ? 'line-through' : 'none',
                 }}
             >
-                <TaskStep
-                    el={el}
-                    idx={index}
-                    isEditing={isEditing}
-                    onChange={onChange}
-                />
+                <TaskStep el={el} idx={index} isEditing={isEditing} onChange={onChange} />
             </div>
 
             {isEditing && (
@@ -97,31 +68,38 @@ function SortableItem({
     );
 }
 
-export default function TaskResults({
-    subtasks,
-    isEditing = false,
-    onUpdate,
-    skipMessage,
-    onNewTask,
-}) {
+export default function TaskResults({ subtasks, isEditing = false, onUpdate, skipMessage, onNewTask }) {
     const [elements, setElements] = useState([]);
     const [totalMinutes, setTotalMinutes] = useState([0, 0]);
     const sensors = useSensors(useSensor(PointerSensor));
+    const triggerConfetti = useConfetti();
+    const sortableElements = elements.filter((el) => el.type === 'timedBlock');
+    const completedCount = sortableElements.filter((el) => el.completed).length;
+    const hasCelebratedRef = useRef(false);
+    const hasInteractedRef = useRef(false);
+
+    useEffect(() => {
+        const allComplete = !isEditing && sortableElements.length > 0 && completedCount === sortableElements.length;
+
+        if (allComplete && !hasCelebratedRef.current && hasInteractedRef.current) {
+            triggerConfetti();
+            hasCelebratedRef.current = true;
+        }
+
+        if (!allComplete) {
+            hasCelebratedRef.current = false;
+        }
+    }, [completedCount, sortableElements.length, isEditing]);
 
     useEffect(() => {
         if (!Array.isArray(subtasks)) return;
 
-        const isAlreadyParsed =
-            subtasks.length > 0 &&
-            typeof subtasks[0] === 'object' &&
-            'title' in subtasks[0];
+        const isAlreadyParsed = subtasks.length > 0 && typeof subtasks[0] === 'object' && 'title' in subtasks[0];
 
         if (isAlreadyParsed) {
             setElements(subtasks);
             const mins = subtasks.reduce((sum, el) => {
-                const match = el.body?.match(
-                    /\((?:(\d+)\s*hours?)?\s*(?:(\d+)\s*minutes?)?\)/i
-                );
+                const match = el.body?.match(/\((?:(\d+)\s*hours?)?\s*(?:(\d+)\s*minutes?)?\)/i);
                 if (match) {
                     const hrs = parseInt(match[1]) || 0;
                     const mins = parseInt(match[2]) || 0;
@@ -141,37 +119,23 @@ export default function TaskResults({
         const parsed = [];
         let minTotal = 0;
         let maxTotal = 0;
-        const compoundRegex =
-            /\((?:(\d+(?:\.\d+)?)\s*hours?)?\s*(?:(\d+(?:\.\d+)?)\s*minutes?)?(?:\s*\w+)?\)/i;
+        const compoundRegex = /\((?:(\d+(?:\.\d+)?)\s*hours?)?\s*(?:(\d+(?:\.\d+)?)\s*minutes?)?(?:\s*\w+)?\)/i;
         let currentTimedBlock = null;
 
         for (let i = 0; i < subtasks.length; i++) {
-            let line =
-                typeof subtasks[i] === 'string'
-                    ? (subtasks[i] || '').trim()
-                    : '';
+            let line = typeof subtasks[i] === 'string' ? (subtasks[i] || '').trim() : '';
             if (!line || line.startsWith('BREAKDOWN:')) continue;
 
             const cleanLine = line.replace(/^\*+|\*+$/g, '').trim();
             const normalizedLine = cleanLine
-                .replace(
-                    /\((?:\s*)?(?:approx\.?|approximately|about|~)\s*/gi,
-                    '('
-                )
+                .replace(/\((?:\s*)?(?:approx\.?|approximately|about|~)\s*/gi, '(')
                 .replace(/\s+/g, ' ')
                 .trim();
 
-            const nextLine =
-                typeof subtasks[i + 1] === 'string'
-                    ? subtasks[i + 1]?.trim()
-                    : '';
-            const isDurationOnly =
-                /^\((?:(\d+)\s*hours?)?\s*(?:(\d+)\s*minutes?)?\)$/i.test(
-                    nextLine
-                );
+            const nextLine = typeof subtasks[i + 1] === 'string' ? subtasks[i + 1]?.trim() : '';
+            const isDurationOnly = /^\((?:(\d+)\s*hours?)?\s*(?:(\d+)\s*minutes?)?\)$/i.test(nextLine);
 
-            const makeId = (prefix) =>
-                `${prefix}-${i}-${line.slice(0, 20).replace(/\s+/g, '_')}`;
+            const makeId = (prefix) => `${prefix}-${i}-${line.slice(0, 20).replace(/\s+/g, '_')}`;
 
             if (line.startsWith('*') || line.startsWith('•')) {
                 const bulletText = normalizedLine.replace(/^[*•]\s*/, '');
@@ -210,10 +174,7 @@ export default function TaskResults({
             const inlineDurationMatch = normalizedLine.match(compoundRegex);
             if (/^\d+\./.test(normalizedLine) && inlineDurationMatch) {
                 const durationText = inlineDurationMatch[0];
-                const title = normalizedLine
-                    .replace(durationText, '')
-                    .trim()
-                    .replace(/:+$/, '');
+                const title = normalizedLine.replace(durationText, '').trim().replace(/:+$/, '');
                 const body = durationText.trim();
                 currentTimedBlock = {
                     id: makeId('inline'),
@@ -225,12 +186,8 @@ export default function TaskResults({
                 };
                 parsed.push(currentTimedBlock);
 
-                const hrs = inlineDurationMatch[1]
-                    ? parseInt(inlineDurationMatch[1], 10)
-                    : 0;
-                const mins = inlineDurationMatch[2]
-                    ? parseInt(inlineDurationMatch[2], 10)
-                    : 0;
+                const hrs = inlineDurationMatch[1] ? parseInt(inlineDurationMatch[1], 10) : 0;
+                const mins = inlineDurationMatch[2] ? parseInt(inlineDurationMatch[2], 10) : 0;
                 minTotal += hrs * 60 + mins;
                 maxTotal += hrs * 60 + mins;
                 continue;
@@ -260,8 +217,7 @@ export default function TaskResults({
     }
 
     function handleAddStep() {
-        const nextNum =
-            elements.filter((e) => e.type === 'timedBlock').length + 1;
+        const nextNum = elements.filter((e) => e.type === 'timedBlock').length + 1;
         setElements([
             ...elements,
             {
@@ -280,6 +236,7 @@ export default function TaskResults({
         updated[index].completed = !updated[index].completed;
         setElements(updated);
         propagateUpdate(updated);
+        hasInteractedRef.current = true;
     }
 
     function handleDragEnd(event) {
@@ -317,9 +274,6 @@ export default function TaskResults({
         onUpdate(updated);
     }
 
-    const sortableElements = elements.filter((el) => el.type === 'timedBlock');
-    const completedCount = sortableElements.filter((el) => el.completed).length;
-
     return (
         <div className="results-section">
             {sortableElements.length > 0 && (
@@ -334,15 +288,8 @@ export default function TaskResults({
                 </div>
             )}
 
-            <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-            >
-                <SortableContext
-                    items={sortableElements.map((el) => el.id)}
-                    strategy={verticalListSortingStrategy}
-                >
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={sortableElements.map((el) => el.id)} strategy={verticalListSortingStrategy}>
                     {sortableElements.map((el, idx) => (
                         <SortableItem
                             key={el.id}
@@ -372,21 +319,13 @@ export default function TaskResults({
             )}
 
             {isEditing && (
-                <button
-                    className="submit-btn secondary"
-                    onClick={handleAddStep}
-                    style={{ marginTop: '1rem', alignSelf: 'flex-start' }}
-                >
+                <button className="submit-btn secondary" onClick={handleAddStep} style={{ marginTop: '1rem', alignSelf: 'flex-start' }}>
                     + Add Step
                 </button>
             )}
 
             {onNewTask && !isEditing && (
-                <button
-                    onClick={onNewTask}
-                    className="submit-btn secondary"
-                    style={{ marginTop: '1rem', alignSelf: 'flex-start' }}
-                >
+                <button onClick={onNewTask} className="submit-btn secondary" style={{ marginTop: '1rem', alignSelf: 'flex-start' }}>
                     Create New Task
                 </button>
             )}

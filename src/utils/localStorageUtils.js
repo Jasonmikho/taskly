@@ -10,9 +10,7 @@ export function getSavedTasks() {
         seen.set(task.id, task); // overwrites if duplicate ID exists
     }
 
-    return Array.from(seen.values()).sort(
-        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
+    return Array.from(seen.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }
 
 export function saveTask(taskObj) {
@@ -20,9 +18,7 @@ export function saveTask(taskObj) {
 
     // Remove any existing task with same ID before saving
     const filtered = saved.filter((t) => t.id !== taskObj.id);
-    const updated = [...filtered, taskObj].sort(
-        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
+    const updated = [...filtered, taskObj].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     localStorage.setItem('savedTasks', JSON.stringify(updated));
     return updated;

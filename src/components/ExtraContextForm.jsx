@@ -24,9 +24,7 @@ export default function ExtraContextForm({
     useEffect(() => {
         if (extraContext.trim() && formRef.current) {
             console.log('[Debug] Auto-submitting extra context:', extraContext);
-            const submitBtn = formRef.current.querySelector(
-                'button[type="submit"]'
-            );
+            const submitBtn = formRef.current.querySelector('button[type="submit"]');
             submitBtn?.click();
         }
     }, []);
@@ -38,9 +36,7 @@ export default function ExtraContextForm({
         if (extraContext.trim()) {
             setLoading(true);
 
-            const contextText = clarificationHistory
-                .filter((line) => !line.startsWith('PREVIEW_BREAKDOWN:'))
-                .join('\n');
+            const contextText = clarificationHistory.filter((line) => !line.startsWith('PREVIEW_BREAKDOWN:')).join('\n');
 
             const contextPrompt = `${contextText}\n\nAdditional context: ${extraContext}\n\nBased on all the above information and the additional context provided, please provide an updated BREAKDOWN:`;
 
@@ -62,9 +58,7 @@ export default function ExtraContextForm({
                 console.log('[Debug] AI Raw Result After Context:', result);
 
                 if (result.toUpperCase().startsWith('BREAKDOWN:')) {
-                    const breakdownContent = result
-                        .replace(/BREAKDOWN:/i, '')
-                        .trim();
+                    const breakdownContent = result.replace(/BREAKDOWN:/i, '').trim();
                     const lines = breakdownContent
                         .split('\n')
                         // .map(line => line.replace(/^•/, '*')) // Convert • to *
@@ -89,10 +83,7 @@ export default function ExtraContextForm({
                     setExtraContext('');
                 }
 
-                setMessageHistory([
-                    ...newHistory,
-                    { role: 'assistant', content: result },
-                ]);
+                setMessageHistory([...newHistory, { role: 'assistant', content: result }]);
             } catch (error) {
                 console.error('Error getting updated breakdown:', error);
                 handleSkipContext();
@@ -105,9 +96,7 @@ export default function ExtraContextForm({
     }
 
     function handleSkipContext() {
-        const previewBreakdown = clarificationHistory.find((h) =>
-            h.startsWith('PREVIEW_BREAKDOWN:')
-        );
+        const previewBreakdown = clarificationHistory.find((h) => h.startsWith('PREVIEW_BREAKDOWN:'));
 
         if (previewBreakdown) {
             const breakdownContent = previewBreakdown
@@ -141,19 +130,12 @@ export default function ExtraContextForm({
 
     return (
         <div className="extra-context-container">
-            <div
-                className="clarification-label"
-                style={{ marginBottom: '1rem' }}
-            >
+            <div className="clarification-label" style={{ marginBottom: '1rem' }}>
                 <strong>Optional: Add More Context</strong>
                 <br />
-                Would you like to provide additional details to improve your
-                task breakdown?
+                Would you like to provide additional details to improve your task breakdown?
                 <br />
-                <small style={{ color: '#666' }}>
-                    (e.g., constraints, preferences, timeline details, or any
-                    other relevant information)
-                </small>
+                <small style={{ color: '#666' }}>(e.g., constraints, preferences, timeline details, or any other relevant information)</small>
             </div>
 
             <form
@@ -194,12 +176,7 @@ export default function ExtraContextForm({
                             flexWrap: 'wrap',
                         }}
                     >
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="submit-btn primary"
-                            style={{ flex: '1', minWidth: '120px' }}
-                        >
+                        <button type="submit" disabled={loading} className="submit-btn primary" style={{ flex: '1', minWidth: '120px' }}>
                             {loading ? 'Updating...' : 'Update Breakdown'}
                         </button>
 
@@ -215,12 +192,7 @@ export default function ExtraContextForm({
                     </div>
                 ) : (
                     <div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="submit-btn primary"
-                            style={{ width: '100%', minWidth: '120px' }}
-                        >
+                        <button type="submit" disabled={loading} className="submit-btn primary" style={{ width: '100%', minWidth: '120px' }}>
                             {loading ? 'Updating...' : 'Use Current Breakdown'}
                         </button>
                     </div>

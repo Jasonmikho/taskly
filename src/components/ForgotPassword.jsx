@@ -22,12 +22,7 @@ export default function ForgotPassword({ switchToLogin }) {
 
     function calculateStrength(password) {
         if (!password) return '';
-        const score = [
-            password.length >= 8,
-            /\d/.test(password),
-            /[!@#$%^&*]/.test(password),
-            /[A-Z]/.test(password),
-        ].filter(Boolean).length;
+        const score = [password.length >= 8, /\d/.test(password), /[!@#$%^&*]/.test(password), /[A-Z]/.test(password)].filter(Boolean).length;
 
         if (score === 4) return 'strong';
         if (score >= 2) return 'medium';
@@ -91,9 +86,7 @@ export default function ForgotPassword({ switchToLogin }) {
 
         if (!passwordRegex.test(newPassword)) {
             setPwValid(false);
-            setError(
-                'Password must be 8+ characters with 1 number & 1 special character.'
-            );
+            setError('Password must be 8+ characters with 1 number & 1 special character.');
             return;
         }
 
@@ -122,200 +115,142 @@ export default function ForgotPassword({ switchToLogin }) {
     }
 
     return (
-        <div className="login-wrapper">
-            <div className="login-left">
-                <h1>Taskly</h1>
-                <p>Reset your password securely</p>
-            </div>
+        <div className="login-wrapper centered">
+            <div className="login-glass-card forgot-password-card">
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '1.25rem',
+                    }}
+                >
+                    <img
+                        src="/croppedLogo.png"
+                        alt="Taskly Icon"
+                        style={{
+                            height: '42px',
+                            width: '42px',
+                            objectFit: 'contain',
+                        }}
+                    />
+                    <h1
+                        style={{
+                            fontSize: '2rem',
+                            fontWeight: '800',
+                            margin: 0,
+                            background: 'linear-gradient(45deg, #cc5c4c, #3a3f91)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            display: 'inline-block',
+                            textShadow: '0 1px 1px rgba(0, 0, 0, 0.05)',
+                        }}
+                    >
+                        Taskly
+                    </h1>
+                </div>
 
-            <div className="login-right">
-                <div className="login-glass-card forgot-password-card">
-                    <h2>Forgot Password</h2>
+                <h2>Forgot Password</h2>
 
-                    {step === 1 && (
-                        <form
-                            className="forgot-password-form"
-                            onSubmit={handleSendCode}
-                        >
-                            <div className="input-icon-group">
-                                <Mail size={18} />
-                                <input
-                                    type="email"
-                                    placeholder="Email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    disabled={loading}
-                                />
-                                <span className="input-placeholder-button" />
-                            </div>
+                {step === 1 && (
+                    <form className="forgot-password-form" onSubmit={handleSendCode}>
+                        <div className="input-icon-group">
+                            <Mail size={18} />
+                            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} />
+                            <span className="input-placeholder-button" />
+                        </div>
 
-                            <button
-                                className="login-btn primary"
-                                type="submit"
-                                disabled={loading}
-                            >
-                                {loading
-                                    ? 'Sending...'
-                                    : 'Send Verification Code'}
+                        <button className="login-btn primary" type="submit" disabled={loading}>
+                            {loading ? 'Sending...' : 'Send Verification Code'}
+                        </button>
+                    </form>
+                )}
+
+                {step === 2 && (
+                    <form className="forgot-password-form" onSubmit={handleVerifyCode}>
+                        <input
+                            className="login-input"
+                            placeholder="Enter 6-digit code"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            disabled={loading}
+                        />
+
+                        <button className="login-btn primary" type="submit" disabled={loading || verifyAttempts >= maxAttempts}>
+                            {loading ? 'Verifying...' : 'Verify Code'}
+                        </button>
+
+                        {verifyAttempts >= maxAttempts && (
+                            <button type="button" className="login-btn secondary" onClick={handleSendCode} disabled={loading}>
+                                Resend Verification Code
                             </button>
-                        </form>
-                    )}
+                        )}
+                    </form>
+                )}
 
-                    {step === 2 && (
-                        <form
-                            className="forgot-password-form"
-                            onSubmit={handleVerifyCode}
-                        >
+                {step === 3 && (
+                    <form className="forgot-password-form" onSubmit={handleResetPassword}>
+                        <div className={`input-icon-group ${!pwValid ? 'input-error' : ''}`}>
+                            <Lock size={18} />
                             <input
-                                className="login-input"
-                                placeholder="Enter 6-digit code"
-                                value={code}
-                                onChange={(e) => setCode(e.target.value)}
+                                type={showPw1 ? 'text' : 'password'}
+                                placeholder="Enter new password"
+                                value={newPassword}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setNewPassword(value);
+                                    setPwValid(passwordRegex.test(value));
+                                    setPwStrength(calculateStrength(value));
+                                }}
                                 disabled={loading}
                             />
-
-                            <button
-                                className="login-btn primary"
-                                type="submit"
-                                disabled={
-                                    loading || verifyAttempts >= maxAttempts
-                                }
-                            >
-                                {loading ? 'Verifying...' : 'Verify Code'}
+                            <button type="button" onClick={() => setShowPw1(!showPw1)} disabled={loading}>
+                                {showPw1 ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
+                        </div>
 
-                            {verifyAttempts >= maxAttempts && (
-                                <button
-                                    type="button"
-                                    className="login-btn secondary"
-                                    onClick={handleSendCode}
-                                    disabled={loading}
-                                >
-                                    Resend Verification Code
-                                </button>
-                            )}
-                        </form>
-                    )}
-
-                    {step === 3 && (
-                        <form
-                            className="forgot-password-form"
-                            onSubmit={handleResetPassword}
-                        >
-                            <div
-                                className={`input-icon-group ${!pwValid ? 'input-error' : ''}`}
-                            >
-                                <Lock size={18} />
-                                <input
-                                    type={showPw1 ? 'text' : 'password'}
-                                    placeholder="Enter new password"
-                                    value={newPassword}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        setNewPassword(value);
-                                        setPwValid(passwordRegex.test(value));
-                                        setPwStrength(calculateStrength(value));
-                                    }}
-                                    disabled={loading}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPw1(!showPw1)}
-                                    disabled={loading}
-                                >
-                                    {showPw1 ? (
-                                        <EyeOff size={18} />
-                                    ) : (
-                                        <Eye size={18} />
-                                    )}
-                                </button>
-                            </div>
-
-                            <div className="input-icon-group">
-                                <Lock size={18} />
-                                <input
-                                    type={showPw2 ? 'text' : 'password'}
-                                    placeholder="Confirm password"
-                                    value={confirmPassword}
-                                    onChange={(e) =>
-                                        setConfirmPassword(e.target.value)
-                                    }
-                                    disabled={loading}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPw2(!showPw2)}
-                                    disabled={loading}
-                                >
-                                    {showPw2 ? (
-                                        <EyeOff size={18} />
-                                    ) : (
-                                        <Eye size={18} />
-                                    )}
-                                </button>
-                            </div>
-
-                            <div className="pw-requirements">
-                                <p>Password must include:</p>
-                                <ul>
-                                    <li
-                                        className={
-                                            newPassword.length >= 8
-                                                ? 'valid'
-                                                : ''
-                                        }
-                                    >
-                                        ✔️ At least 8 characters
-                                    </li>
-                                    <li
-                                        className={
-                                            /\d/.test(newPassword)
-                                                ? 'valid'
-                                                : ''
-                                        }
-                                    >
-                                        ✔️ A number
-                                    </li>
-                                    <li
-                                        className={
-                                            /[!@#$%^&*]/.test(newPassword)
-                                                ? 'valid'
-                                                : ''
-                                        }
-                                    >
-                                        ✔️ A special character
-                                    </li>
-                                </ul>
-                                {pwStrength && (
-                                    <div
-                                        className={`strength-bar ${pwStrength}`}
-                                    >
-                                        <div className="fill" />
-                                    </div>
-                                )}
-                            </div>
-
-                            <button
-                                className="login-btn primary"
-                                type="submit"
+                        <div className="input-icon-group">
+                            <Lock size={18} />
+                            <input
+                                type={showPw2 ? 'text' : 'password'}
+                                placeholder="Confirm password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
                                 disabled={loading}
-                            >
-                                {loading ? 'Resetting...' : 'Reset Password'}
+                            />
+                            <button type="button" onClick={() => setShowPw2(!showPw2)} disabled={loading}>
+                                {showPw2 ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
-                        </form>
-                    )}
+                        </div>
 
-                    {error && <div className="login-error">{error}</div>}
-                    {success && <div className="login-success">{success}</div>}
+                        <div className="pw-requirements">
+                            <p>Password must include:</p>
+                            <ul>
+                                <li className={newPassword.length >= 8 ? 'valid' : ''}>✔️ At least 8 characters</li>
+                                <li className={/\d/.test(newPassword) ? 'valid' : ''}>✔️ A number</li>
+                                <li className={/[!@#$%^&*]/.test(newPassword) ? 'valid' : ''}>✔️ A special character</li>
+                            </ul>
+                            {pwStrength && (
+                                <div className={`strength-bar ${pwStrength}`}>
+                                    <div className="fill" />
+                                </div>
+                            )}
+                        </div>
 
-                    <button
-                        className="login-btn secondary"
-                        onClick={switchToLogin}
-                        disabled={loading}
-                    >
-                        Back to Login
-                    </button>
-                </div>
+                        <button className="login-btn primary" type="submit" disabled={loading}>
+                            {loading ? 'Resetting...' : 'Reset Password'}
+                        </button>
+                    </form>
+                )}
+
+                {error && <div className="login-error">{error}</div>}
+                {success && <div className="login-success">{success}</div>}
+
+                <button className="login-btn secondary" onClick={switchToLogin} disabled={loading}>
+                    Back to Login
+                </button>
             </div>
         </div>
     );

@@ -10,6 +10,10 @@ export default defineConfig([
         files: ['**/*.{js,mjs,cjs,jsx}'],
         plugins: { js },
         extends: ['js/recommended'],
+        rules: {
+            'max-len': ['error', { code: 100, ignorePattern: '^import .*', ignoreUrls: true }],
+            'function-paren-newline': ['error', 'never'],
+        },
     },
     {
         files: ['**/*.{js,mjs,cjs,jsx}'],

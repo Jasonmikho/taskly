@@ -1,10 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-    createUserWithEmailAndPassword,
-    sendEmailVerification,
-    signInWithEmailAndPassword,
-    signOut,
-} from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
@@ -30,7 +25,6 @@ export default function Register({ setUser, switchToLogin, onClose }) {
 
     const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
 
-    // Polling effect to check email verification status
     useEffect(() => {
         if (verificationSent && pendingUser && polling && userCredentials) {
             const interval = setInterval(async () => {
@@ -39,42 +33,25 @@ export default function Register({ setUser, switchToLogin, onClose }) {
                     const currentUser = auth.currentUser;
 
                     if (currentUser && currentUser.emailVerified) {
-                        console.log(
-                            'Email verified! Signing user in automatically...'
-                        );
                         clearInterval(interval);
                         setPolling(false);
-
-                        // Force a fresh sign-in to trigger onAuthStateChanged
                         try {
                             await signOut(auth);
-                            await signInWithEmailAndPassword(
-                                auth,
-                                userCredentials.email,
-                                userCredentials.password
-                            );
-                            console.log(
-                                'User automatically signed in after verification'
-                            );
+                            await signInWithEmailAndPassword(auth, userCredentials.email, userCredentials.password);
                         } catch (signInError) {
                             console.error('Auto sign-in failed:', signInError);
-                            setError(
-                                'Verification successful! Please sign in manually.'
-                            );
+                            setError('Verification successful! Please sign in manually.');
                         }
                     }
                 } catch (error) {
                     console.error('Error checking verification status:', error);
                 }
-            }, 2000); // Check every 2 seconds
+            }, 2000);
 
-            // Stop polling after 5 minutes
             const timeout = setTimeout(() => {
                 clearInterval(interval);
                 setPolling(false);
-                setSuccess(
-                    'Verification check timed out. Please refresh the page after verifying your email.'
-                );
+                setSuccess('Verification check timed out. Please refresh the page after verifying your email.');
             }, 300000);
 
             return () => {
@@ -102,9 +79,7 @@ export default function Register({ setUser, switchToLogin, onClose }) {
 
         if (!passwordRegex.test(pw1)) {
             setPwValid(false);
-            setError(
-                'Password must be 8+ characters with 1 number & 1 special character.'
-            );
+            setError('Password must be 8+ characters with 1 number & 1 special character.');
             setLoading(false);
             return;
         }
@@ -116,31 +91,21 @@ export default function Register({ setUser, switchToLogin, onClose }) {
         }
 
         try {
-            const userCredential = await createUserWithEmailAndPassword(
-                auth,
-                email,
-                pw1
-            );
-            console.log('User created:', userCredential.user);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, pw1);
 
-            // Store credentials for auto sign-in after verification
             setUserCredentials({ email: email.trim(), password: pw1 });
 
-            // Send verification email
             await sendEmailVerification(userCredential.user);
-            console.log('Verification email sent');
 
             setSuccess(
                 'Registration successful! Please check your email (including spam folder) to verify your account. You will be automatically logged in once verified.'
             );
             setPendingUser(userCredential.user);
             setVerificationSent(true);
-            setPolling(true); // Start polling for verification
+            setPolling(true);
             setLoading(false);
         } catch (err) {
             setLoading(false);
-            console.error('Registration error:', err);
-
             switch (err.code) {
                 case 'auth/invalid-email':
                     setError('Invalid email format.');
@@ -168,9 +133,7 @@ export default function Register({ setUser, switchToLogin, onClose }) {
         const hasSpecial = /[!@#$%^&*]/.test(password);
         const hasUpper = /[A-Z]/.test(password);
 
-        const score = [length >= 8, hasNumber, hasSpecial, hasUpper].filter(
-            Boolean
-        ).length;
+        const score = [length >= 8, hasNumber, hasSpecial, hasUpper].filter(Boolean).length;
 
         if (score === 4) return 'strong';
         if (score >= 2) return 'medium';
@@ -179,183 +142,154 @@ export default function Register({ setUser, switchToLogin, onClose }) {
 
     async function handleResend() {
         if (!pendingUser) return;
-
         setLoading(true);
         setError('');
-
         try {
             await sendEmailVerification(pendingUser);
-            setSuccess(
-                'Verification email resent! Please check your email (including spam folder). You will be automatically logged in once verified.'
-            );
-            setPolling(true); // Restart polling
+            setSuccess('Verification email resent! Please check your email (including spam folder). You will be automatically logged in once verified.');
+            setPolling(true);
             setLoading(false);
         } catch (err) {
             setLoading(false);
-            console.error('Resend error:', err);
             setError('Failed to resend verification email. Please try again.');
         }
     }
 
     return (
-        <div className="login-wrapper">
-            <div className="login-left">
-                <h1>Taskly</h1>
-                <p>Sign up and start organizing your tasks intelligently</p>
-            </div>
-
-            <div className="login-right">
-                <form className="login-glass-card" onSubmit={handleRegister}>
-                    <h2>Create an Account</h2>
-
-                    <div
-                        className={`input-icon-group ${emailFocused && !emailValid ? 'input-error' : ''}`}
+        <div className="login-wrapper centered">
+            <form className="login-glass-card" onSubmit={handleRegister}>
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '1.25rem',
+                    }}
+                >
+                    <img
+                        src="/croppedLogo.png"
+                        alt="Taskly Icon"
+                        style={{
+                            height: '42px',
+                            width: '42px',
+                            objectFit: 'contain',
+                        }}
+                    />
+                    <h1
+                        style={{
+                            fontSize: '2rem',
+                            fontWeight: '800',
+                            margin: 0,
+                            background: 'linear-gradient(45deg, #cc5c4c, #3a3f91)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            display: 'inline-block',
+                            textShadow: '0 1px 1px rgba(0, 0, 0, 0.05)',
+                        }}
                     >
-                        <Mail size={18} />
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            value={email}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                setEmail(value);
-                                setEmailValid(
-                                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-                                );
-                            }}
-                            onFocus={() => setEmailFocused(true)}
-                            onBlur={() => setEmailFocused(false)}
-                            disabled={loading || polling}
-                        />
-                        <span className="input-placeholder-button" />
-                    </div>
+                        Taskly
+                    </h1>
+                </div>
 
-                    <div
-                        className={`input-icon-group ${pw1Focused && !pwValid ? 'input-error' : ''}`}
-                    >
-                        <Lock size={18} />
-                        <input
-                            type={showPw1 ? 'text' : 'password'}
-                            placeholder="Password"
-                            value={pw1}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                setPw1(value);
-                                setPwValid(passwordRegex.test(value));
-                                setPwStrength(calculateStrength(value));
-                            }}
-                            onFocus={() => setPw1Focused(true)}
-                            onBlur={() => setPw1Focused(false)}
-                            disabled={loading || polling}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPw1(!showPw1)}
-                            disabled={loading || polling}
-                        >
-                            {showPw1 ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                    </div>
+                <h2>Create an Account</h2>
 
-                    <div className="pw-requirements">
-                        <p>Password must include:</p>
-                        <ul>
-                            <li className={pw1.length >= 8 ? 'valid' : ''}>
-                                ✔️ At least 8 characters
-                            </li>
-                            <li className={/\d/.test(pw1) ? 'valid' : ''}>
-                                ✔️ A number
-                            </li>
-                            <li
-                                className={
-                                    /[!@#$%^&*]/.test(pw1) ? 'valid' : ''
-                                }
-                            >
-                                ✔️ A special character
-                            </li>
-                        </ul>
+                <div className={`input-icon-group ${emailFocused && !emailValid ? 'input-error' : ''}`}>
+                    <Mail size={18} />
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setEmail(value);
+                            setEmailValid(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
+                        }}
+                        onFocus={() => setEmailFocused(true)}
+                        onBlur={() => setEmailFocused(false)}
+                        disabled={loading || polling}
+                    />
+                    <span className="input-placeholder-button" />
+                </div>
 
-                        {pwStrength && (
-                            <div className={`strength-bar ${pwStrength}`}>
-                                <div className="fill" />
-                            </div>
-                        )}
-                    </div>
+                <div className={`input-icon-group ${pw1Focused && !pwValid ? 'input-error' : ''}`}>
+                    <Lock size={18} />
+                    <input
+                        type={showPw1 ? 'text' : 'password'}
+                        placeholder="Password"
+                        value={pw1}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setPw1(value);
+                            setPwValid(passwordRegex.test(value));
+                            setPwStrength(calculateStrength(value));
+                        }}
+                        onFocus={() => setPw1Focused(true)}
+                        onBlur={() => setPw1Focused(false)}
+                        disabled={loading || polling}
+                    />
+                    <button type="button" onClick={() => setShowPw1(!showPw1)} disabled={loading || polling}>
+                        {showPw1 ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                </div>
 
-                    <div className="input-icon-group">
-                        <Lock size={18} />
-                        <input
-                            type={showPw2 ? 'text' : 'password'}
-                            placeholder="Confirm Password"
-                            value={pw2}
-                            onChange={(e) => setPw2(e.target.value)}
-                            disabled={loading || polling}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPw2(!showPw2)}
-                            disabled={loading || polling}
-                        >
-                            {showPw2 ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                    </div>
-
-                    {error && <div className="login-error">{error}</div>}
-                    {success && (
-                        <div className="login-success">
-                            {success}
-                            {polling && (
-                                <div
-                                    style={{
-                                        marginTop: '10px',
-                                        fontSize: '14px',
-                                    }}
-                                >
-                                    🔄 Waiting for email verification...
-                                </div>
-                            )}
+                <div className="pw-requirements">
+                    <p>Password must include:</p>
+                    <ul>
+                        <li className={pw1.length >= 8 ? 'valid' : ''}>✔️ At least 8 characters</li>
+                        <li className={/\d/.test(pw1) ? 'valid' : ''}>✔️ A number</li>
+                        <li className={/[!@#$%^&*]/.test(pw1) ? 'valid' : ''}>✔️ A special character</li>
+                    </ul>
+                    {pwStrength && (
+                        <div className={`strength-bar ${pwStrength}`}>
+                            <div className="fill" />
                         </div>
                     )}
+                </div>
 
-                    <button
-                        type="submit"
-                        className="login-btn primary"
+                <div className="input-icon-group">
+                    <Lock size={18} />
+                    <input
+                        type={showPw2 ? 'text' : 'password'}
+                        placeholder="Confirm Password"
+                        value={pw2}
+                        onChange={(e) => setPw2(e.target.value)}
                         disabled={loading || polling}
-                    >
-                        {loading
-                            ? 'Creating Account...'
-                            : polling
-                              ? 'Waiting for Verification...'
-                              : 'Register'}
+                    />
+                    <button type="button" onClick={() => setShowPw2(!showPw2)} disabled={loading || polling}>
+                        {showPw2 ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
+                </div>
 
-                    {verificationSent && (
-                        <button
-                            type="button"
-                            className="login-btn secondary"
-                            style={{
-                                backgroundColor: '#facc15',
-                                color: '#1e293b',
-                            }}
-                            onClick={handleResend}
-                            disabled={loading}
-                        >
-                            {loading
-                                ? 'Sending...'
-                                : 'Resend Verification Email'}
-                        </button>
-                    )}
+                {error && <div className="login-error">{error}</div>}
+                {success && (
+                    <div className="login-success">
+                        {success}
+                        {polling && <div style={{ marginTop: '10px', fontSize: '14px' }}>🔄 Waiting for email verification...</div>}
+                    </div>
+                )}
 
+                <button type="submit" className="login-btn primary" disabled={loading || polling}>
+                    {loading ? 'Creating Account...' : polling ? 'Waiting for Verification...' : 'Register'}
+                </button>
+
+                {verificationSent && (
                     <button
                         type="button"
                         className="login-btn secondary"
-                        onClick={switchToLogin}
-                        disabled={loading || polling}
+                        style={{ backgroundColor: '#facc15', color: '#1e293b' }}
+                        onClick={handleResend}
+                        disabled={loading}
                     >
-                        Back to Login
+                        {loading ? 'Sending...' : 'Resend Verification Email'}
                     </button>
-                </form>
-            </div>
+                )}
+
+                <button type="button" className="login-btn secondary" onClick={switchToLogin} disabled={loading || polling}>
+                    Back to Login
+                </button>
+            </form>
         </div>
     );
 }
