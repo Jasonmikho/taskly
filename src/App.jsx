@@ -96,6 +96,7 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setLoadingUser(false);
+
             if (currentUser?.emailVerified) {
                 setUser(currentUser);
                 setActiveTab('new');
@@ -103,16 +104,19 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                 getSavedTasks(currentUser.uid).then(setSavedTasks);
                 setAuthMode(null);
             } else {
-                setUser(null);
-                setSavedTasks([]);
-                setActiveTab('new');
-                resetAllTaskStates();
-                setAuthMode('login');
+                // If user is already pending verification, do not override register flow
+                if (!authMode) {
+                    setUser(null);
+                    setSavedTasks([]);
+                    setActiveTab('new');
+                    resetAllTaskStates();
+                    setAuthMode('login');
+                }
             }
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [authMode]);
 
     useEffect(() => {
         function handleClickOutside(event) {
