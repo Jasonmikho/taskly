@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { signOut, signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 export default function EmailVerificationPending({ user, userCredentials, onVerified, onResend }) {
     const [polling, setPolling] = useState(true);
@@ -13,15 +12,38 @@ export default function EmailVerificationPending({ user, userCredentials, onVeri
             if (!polling) return;
 
             try {
-                await user.reload();
-                if (user.emailVerified) {
+                // Step 1: Reload user data to refresh emailVerified status
+                await FirebaseAuthentication.reload();
+
+                // Step 2: Get the refreshed user
+                const currentUserResult = await FirebaseAuthentication.getCurrentUser();
+
+                if (currentUserResult.user?.emailVerified) {
                     clearInterval(interval);
                     setPolling(false);
 
-                    await signOut(auth);
-                    await signInWithEmailAndPassword(auth, userCredentials.email, userCredentials.password);
+                    // console.log('[Verification] Email verified — refreshing session');
 
-                    onVerified();
+                    // Sign out to clear stale session
+                    await FirebaseAuthentication.signOut();
+
+                    // Sign in again to refresh session with verified state
+                    const newCred = await FirebaseAuthentication.signInWithEmailAndPassword({
+                        email: userCredentials.email,
+                        password: userCredentials.password,
+                    });
+
+                    const refreshedUser = newCred.user;
+
+                    // Optional: verify again that it's the right user and verified
+                    if (refreshedUser?.emailVerified) {
+                        // console.log('[Verification] Re-login successful and verified:', refreshedUser);
+
+                        // Pass user back to App.jsx so it can set user + pull saved tasks
+                        onVerified(refreshedUser);
+                    } else {
+                        setError('Re-login failed after verification. Try again.');
+                    }
                 }
             } catch (err) {
                 setError('Error checking verification status.');
@@ -39,7 +61,7 @@ export default function EmailVerificationPending({ user, userCredentials, onVeri
             clearInterval(interval);
             clearTimeout(timeout);
         };
-    }, [polling, user]);
+    }, [polling, onVerified]); // Removed user and userCredentials from dependencies
 
     return (
         <div className="login-wrapper centered" style={{ overflowY: 'auto', maxHeight: '100vh', padding: '1rem' }}>

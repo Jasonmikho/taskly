@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
 import './Login.css';
 import './MainApp.css';
 import TaskInput from './components/TaskInput';
@@ -9,14 +10,14 @@ import SavedTasks from './components/SavedTasks';
 import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
-import { auth } from './firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { getSavedTasks, saveTask, deleteTaskById } from './utils/firebaseUtils';
 import { LogOut, Plus, Archive, Calendar } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DateTimePicker from './components/DateTimePicker';
 import CalendarView from './components/CalendarView';
+import EmailVerificationPending from './components/EmailVerificationPending';
 
 function App() {
     const [user, setUser] = useState(null);
@@ -37,6 +38,11 @@ function App() {
     const [screenState, setScreenState] = useState('idle');
     const [eventDateTime, setEventDateTime] = useState(null);
     const [skipMessage, setSkipMessage] = useState('');
+    const [showVerificationScreen, setShowVerificationScreen] = useState(false);
+    const [pendingUser, setPendingUser] = useState(null);
+    const [userCredentials, setUserCredentials] = useState(null);
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [authCheckComplete, setAuthCheckComplete] = useState(false);
 
     const [messageHistory, setMessageHistory] = useState([
         {
@@ -94,29 +100,102 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
     };
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setLoadingUser(false);
+        const setupAuthListener = async () => {
+            if (Capacitor.isNativePlatform()) {
+                // Native platform - use Capacitor Firebase Authentication plugin
+                const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
 
-            if (currentUser?.emailVerified) {
-                setUser(currentUser);
-                setActiveTab('new');
-                resetAllTaskStates();
-                getSavedTasks(currentUser.uid).then(setSavedTasks);
-                setAuthMode(null);
-            } else {
-                // If user is already pending verification, do not override register flow
-                if (!authMode) {
-                    setUser(null);
-                    setSavedTasks([]);
-                    setActiveTab('new');
-                    resetAllTaskStates();
-                    setAuthMode('login');
+                const removeListener = await FirebaseAuthentication.addListener('authStateChange', (result) => {
+                    setLoadingUser(false);
+
+                    if (result.user?.emailVerified) {
+                        setUser(result.user);
+                        setActiveTab('new');
+                        resetAllTaskStates();
+                        getSavedTasks(result.user.uid).then(setSavedTasks);
+                        setAuthMode(null);
+                        setIsRegistering(false);
+                    } else {
+                        if (showVerificationScreen || pendingUser || isRegistering) {
+                            console.log('[App] Verification flow active — skipping fallback login screen');
+                            return;
+                        }
+
+                        if (!authMode) {
+                            setUser(null);
+                            setSavedTasks([]);
+                            setActiveTab('new');
+                            resetAllTaskStates();
+                            setAuthMode('login');
+                        }
+                    }
+                });
+
+                // Check current user on app start
+                try {
+                    const result = await FirebaseAuthentication.getCurrentUser();
+                    setLoadingUser(false);
+
+                    if (result.user?.emailVerified) {
+                        setUser(result.user);
+                        getSavedTasks(result.user.uid).then(setSavedTasks);
+                    } else if (!authMode && !showVerificationScreen && !pendingUser && !isRegistering) {
+                        setUser(null);
+                        setSavedTasks([]);
+                        setAuthMode('login');
+                    }
+                } catch (error) {
+                    console.error('Error getting current user (native):', error);
+                    setLoadingUser(false);
+
+                    if (!authMode && !showVerificationScreen && !pendingUser && !isRegistering) {
+                        setAuthMode('login');
+                    }
                 }
-            }
-        });
+                setAuthCheckComplete(true);
 
-        return () => unsubscribe();
-    }, [authMode]);
+                return () => removeListener.remove();
+            } else {
+                // Web platform - use Firebase web SDK
+                const firebaseModule = await import('./firebase.js');
+                const { onAuthStateChanged } = await import('firebase/auth');
+
+                const auth = firebaseModule.auth;
+
+                let called = false;
+
+                const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+                    if (!called) {
+                        called = true;
+                        setAuthCheckComplete(true);
+                    }
+
+                    setLoadingUser(false);
+
+                    if (currentUser?.emailVerified) {
+                        setUser(currentUser);
+                        setActiveTab('new');
+                        resetAllTaskStates();
+                        getSavedTasks(currentUser.uid).then(setSavedTasks);
+                        setAuthMode(null);
+                        setIsRegistering(false);
+                    } else {
+                        if (!authMode && !showVerificationScreen && !pendingUser && !isRegistering) {
+                            setUser(null);
+                            setSavedTasks([]);
+                            setActiveTab('new');
+                            resetAllTaskStates();
+                            setAuthMode('login');
+                        }
+                    }
+                });
+
+                return unsubscribe;
+            }
+        };
+
+        setupAuthListener();
+    }, []);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -154,11 +233,9 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
             toast.error('Please select a planned date & time before continuing.');
             return;
         }
-        const trimmedResult = result.trim();
-        const updatedHistory = [...messageHistory, { role: 'assistant', content: result }];
 
-        console.log('[Debug] AI response received:', trimmedResult);
-        console.log('[Debug] Clarification history:', history);
+        const trimmedResult = result.trim();
+        const updatedHistory = messageHistory.concat({ role: 'assistant', content: result });
 
         const isQuestion = trimmedResult.toUpperCase().startsWith('QUESTION:');
         const isBreakdown = trimmedResult.toUpperCase().startsWith('BREAKDOWN:');
@@ -172,7 +249,6 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
         if (isQuestion) {
             const extracted = trimmedResult.replace(/QUESTION:/i, '').trim();
 
-            // 💥 Handle malformed AI output like "QUESTION: ()" or blank string
             if (!extracted || extracted === '()') {
                 if (fallback) {
                     const raw = fallback
@@ -180,10 +256,15 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                         .replace(/BREAKDOWN:/i, '')
                         .trim();
                     const normalized = normalizeBreakdownFormat(raw);
-                    const modified = extraContext ? [`* Extra context: ${extraContext}`, ...normalized.split('\n')] : normalized.split('\n');
-                    const lines = modified.split('\n').filter(Boolean);
+                    const lines = (extraContext ? [`* Extra context: ${extraContext}`, ...normalized.split('\n')] : normalized.split('\n')).filter(Boolean);
 
                     setSubtasks([]);
+                    setMessageHistory((prev) =>
+                        prev.concat({
+                            role: 'system',
+                            content: 'Used fallback breakdown after malformed question',
+                        })
+                    );
 
                     if (user) {
                         const taskObj = {
@@ -198,17 +279,9 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
 
                     setSkipCount(0);
                     setScreenState('context');
-                    setMessageHistory([
-                        ...updatedHistory,
-                        {
-                            role: 'system',
-                            content: 'Used fallback breakdown after malformed question',
-                        },
-                    ]);
                     return;
                 }
 
-                // fallback not available, show message
                 setSkipMessage('The AI response was invalid. Please try a new task.');
                 setSubtasks([]);
                 setSkipCount(0);
@@ -223,10 +296,15 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                         .replace(/BREAKDOWN:/i, '')
                         .trim();
                     const normalized = normalizeBreakdownFormat(raw);
-                    const modified = extraContext ? [`* Extra context: ${extraContext}`, ...normalized.split('\n')] : normalized.split('\n');
-                    const lines = modified.split('\n').filter(Boolean);
+                    const lines = (extraContext ? [`* Extra context: ${extraContext}`, ...normalized.split('\n')] : normalized.split('\n')).filter(Boolean);
 
                     setSubtasks([]);
+                    setMessageHistory((prev) =>
+                        prev.concat({
+                            role: 'system',
+                            content: 'Used fallback breakdown after skip/question limit',
+                        })
+                    );
 
                     if (user) {
                         const taskObj = {
@@ -241,22 +319,14 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
 
                     setSkipCount(0);
                     setScreenState('context');
-                    setMessageHistory([
-                        ...updatedHistory,
-                        {
-                            role: 'system',
-                            content: 'Used fallback breakdown after skip/question limit',
-                        },
-                    ]);
                     return;
                 }
 
                 if (user) {
-                    const simple = [`1. ${task}`];
                     const taskObj = {
                         id: Date.now(),
                         task,
-                        subtasks: simple,
+                        subtasks: [`1. ${task}`],
                         timestamp: eventDateTime?.toISOString() || new Date().toISOString(),
                         dateTime: eventDateTime || null,
                     };
@@ -280,25 +350,20 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
         }
 
         if (isBreakdown) {
-            console.log('[Debug] Breakdown detected, current history:', history);
-
             const raw = trimmedResult.replace(/BREAKDOWN:/i, '').trim();
             const normalized = normalizeBreakdownFormat(raw);
             const newHistory = [...history, `PREVIEW_BREAKDOWN:BREAKDOWN:\n${normalized}`];
+            const lines = (extraContext ? [`* Extra context: ${extraContext}`, ...normalized.split('\n')] : normalized.split('\n')).filter(Boolean);
 
-            console.log('[Debug] Normalized breakdown:', normalized);
-            console.log('[Debug] New clarification history:', newHistory);
-
-            const modifiedLines = extraContext ? [`* Extra context: ${extraContext}`, ...normalized.split('\n')] : normalized.split('\n');
-
-            setSubtasks(modifiedLines); // ✅ Set subtasks even if not logged in
+            setSubtasks(lines);
             setClarificationHistory(newHistory);
             setScreenState('context');
             setClarification('');
             setMessageHistory(updatedHistory);
             return;
         }
-        // Fallback: neither question nor breakdown
+
+        // Fallback if it's not a valid breakdown or question
         setScreenState('question');
         setCurrentQuestion("Sorry, that wasn't a valid breakdown. Can you clarify your task a bit?");
         setClarification('');
@@ -317,7 +382,7 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
 
     const handleLogout = async () => {
         try {
-            await signOut(auth);
+            await FirebaseAuthentication.signOut();
             toast.success('Logged out successfully', {
                 position: 'top-right',
                 autoClose: 2000,
@@ -333,7 +398,33 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
         }
     };
 
-    if (loadingUser) return null;
+    if (loadingUser || !authCheckComplete) return null;
+
+    if (showVerificationScreen && pendingUser && userCredentials) {
+        return (
+            <EmailVerificationPending
+                user={pendingUser}
+                userCredentials={userCredentials}
+                onVerified={(verifiedUser) => {
+                    setUser(verifiedUser);
+                    getSavedTasks(verifiedUser.uid).then(setSavedTasks);
+                    setShowVerificationScreen(false);
+                    setPendingUser(null);
+                    setUserCredentials(null);
+                    setAuthMode(null);
+                    setIsRegistering(false);
+                }}
+                onResend={async () => {
+                    try {
+                        await FirebaseAuthentication.sendEmailVerification();
+                        toast.success('Verification email resent!');
+                    } catch (err) {
+                        toast.error('Failed to resend. Try again.');
+                    }
+                }}
+            />
+        );
+    }
 
     return (
         <>
@@ -361,7 +452,17 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                             onClose={() => setAuthMode(null)}
                         />
                     )}
-                    {authMode === 'register' && <Register setUser={setUser} switchToLogin={() => setAuthMode('login')} onClose={() => setAuthMode(null)} />}
+                    {authMode === 'register' && (
+                        <Register
+                            setUser={setUser}
+                            switchToLogin={() => setAuthMode('login')}
+                            onClose={() => setAuthMode(null)}
+                            setShowVerificationScreen={setShowVerificationScreen}
+                            setPendingUser={setPendingUser}
+                            setUserCredentials={setUserCredentials}
+                            setIsRegistering={setIsRegistering}
+                        />
+                    )}
                     {authMode === 'forgot' && <ForgotPassword switchToLogin={() => setAuthMode('login')} onClose={() => setAuthMode(null)} />}
                 </div>
             )}
@@ -546,7 +647,6 @@ BREAKDOWN MUST FOLLOW THIS FORMAT EXACTLY.
                         )}
                         {activeTab === 'calendar' && (
                             <>
-                                {console.log('[App.jsx] Rendering CalendarView with savedTasks:', savedTasks)}
                                 <CalendarView tasks={savedTasks} />
                             </>
                         )}

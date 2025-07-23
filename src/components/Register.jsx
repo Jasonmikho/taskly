@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
-import { createUserWithEmailAndPassword, sendEmailVerification, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '../firebase';
+import { useState } from 'react';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import EmailVerificationPending from './EmailVerificationPending'; // ✅ You need to create this file
 
-export default function Register({ setUser, switchToLogin, onClose }) {
+export default function Register({ setUser, switchToLogin, onClose, setShowVerificationScreen, setPendingUser, setUserCredentials, setIsRegistering }) {
     const [email, setEmail] = useState('');
     const [pw1, setPw1] = useState('');
     const [pw2, setPw2] = useState('');
@@ -13,10 +11,6 @@ export default function Register({ setUser, switchToLogin, onClose }) {
     const [showPw1, setShowPw1] = useState(false);
     const [showPw2, setShowPw2] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [pendingUser, setPendingUser] = useState(null);
-    const [userCredentials, setUserCredentials] = useState(null);
-    const [showVerificationScreen, setShowVerificationScreen] = useState(false);
-
     const [emailFocused, setEmailFocused] = useState(false);
     const [emailValid, setEmailValid] = useState(true);
     const [pwValid, setPwValid] = useState(true);
@@ -24,65 +18,6 @@ export default function Register({ setUser, switchToLogin, onClose }) {
     const [pw1Focused, setPw1Focused] = useState(false);
 
     const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
-
-    async function handleRegister(e) {
-        e.preventDefault();
-        setError('');
-        setSuccess('');
-        setLoading(true);
-        setPendingUser(null);
-        setUserCredentials(null);
-        setShowVerificationScreen(false);
-
-        if (!email.trim() || !pw1.trim() || !pw2.trim()) {
-            setError('Please fill out all fields.');
-            setLoading(false);
-            return;
-        }
-
-        if (!passwordRegex.test(pw1)) {
-            setPwValid(false);
-            setError('Password must be 8+ characters with 1 number & 1 special character.');
-            setLoading(false);
-            return;
-        }
-
-        if (pw1 !== pw2) {
-            setError('Passwords do not match.');
-            setLoading(false);
-            return;
-        }
-
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), pw1);
-            await sendEmailVerification(userCredential.user);
-
-            setUserCredentials({ email: email.trim(), password: pw1 });
-            setPendingUser(userCredential.user);
-            setShowVerificationScreen(true);
-            setLoading(false);
-        } catch (err) {
-            console.error('[Firebase Registration Error]', err.code, err.message, err);
-            setLoading(false);
-            switch (err.code) {
-                case 'auth/invalid-email':
-                    setError('Invalid email format.');
-                    break;
-                case 'auth/email-already-in-use':
-                    setError('This email is already in use.');
-                    break;
-                case 'auth/weak-password':
-                    setError('Password should be at least 6 characters.');
-                    break;
-                case 'auth/operation-not-allowed':
-                    setError('Email/password accounts are not enabled.');
-                    break;
-                default:
-                    setError(`Registration failed: ${err.message}`);
-                    break;
-            }
-        }
-    }
 
     function calculateStrength(password) {
         if (!password) {
@@ -107,36 +42,69 @@ export default function Register({ setUser, switchToLogin, onClose }) {
         return 'weak';
     }
 
-    async function handleResend() {
-        if (!pendingUser) {
+    async function handleRegister(e) {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        setLoading(true);
+
+        if (!email.trim() || !pw1.trim() || !pw2.trim()) {
+            setError('Please fill out all fields.');
+            setLoading(false);
+            setIsRegistering(false); // Add this line
             return;
         }
 
-        setLoading(true);
-        setError('');
+        if (!passwordRegex.test(pw1)) {
+            setPwValid(false);
+            setError('Password must be 8+ characters with 1 number & 1 special character.');
+            setLoading(false);
+            setIsRegistering(false); // Add this line
+            return;
+        }
+
+        if (pw1 !== pw2) {
+            setError('Passwords do not match.');
+            setLoading(false);
+            setIsRegistering(false); // Add this line
+            return;
+        }
 
         try {
-            await sendEmailVerification(pendingUser);
-            setSuccess('Verification email resent! Check inbox/spam.');
-            setLoading(false);
-        } catch (err) {
-            setLoading(false);
-            setError('Failed to resend verification email. Please try again.');
-        }
-    }
+            const userCredential = await FirebaseAuthentication.createUserWithEmailAndPassword({
+                email: email.trim(),
+                password: pw1,
+            });
 
-    if (showVerificationScreen && pendingUser && userCredentials) {
-        return (
-            <EmailVerificationPending
-                user={pendingUser}
-                userCredentials={userCredentials}
-                onVerified={() => {
-                    setSuccess('Email verified! Logging in...');
-                    setShowVerificationScreen(false);
-                }}
-                onResend={handleResend}
-            />
-        );
+            setIsRegistering(true);
+            setUserCredentials({ email: email.trim(), password: pw1 });
+            setPendingUser(userCredential.user);
+            setShowVerificationScreen(true);
+
+            await FirebaseAuthentication.sendEmailVerification();
+        } catch (err) {
+            console.error('[Firebase Registration Error]', err.code, err.message, err);
+            setIsRegistering(false); // Add this line for error cases
+            switch (err.code) {
+                case 'auth/invalid-email':
+                    setError('Invalid email format.');
+                    break;
+                case 'auth/email-already-in-use':
+                    setError('This email is already in use.');
+                    break;
+                case 'auth/weak-password':
+                    setError('Password should be at least 6 characters.');
+                    break;
+                case 'auth/operation-not-allowed':
+                    setError('Email/password accounts are not enabled.');
+                    break;
+                default:
+                    setError(`Registration failed: ${err.message}`);
+                    break;
+            }
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (

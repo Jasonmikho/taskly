@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../firebase';
+import { Capacitor } from '@capacitor/core';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
 export default function Login({ setUser, switchToRegister, switchToForgot, onClose }) {
@@ -26,18 +25,49 @@ export default function Login({ setUser, switchToRegister, switchToForgot, onClo
         }
 
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            if (!userCredential.user.emailVerified) {
-                setError('Email not verified. Please check your inbox.');
-                setLoading(false);
-                return;
-            }
+            let userCredential;
 
-            // Don't manually set user here - let onAuthStateChanged handle it
-            console.log('Login successful, waiting for auth state change...');
+            if (Capacitor.isNativePlatform()) {
+                // Native platform - use dynamic import for Capacitor plugin
+                const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+
+                // console.log('⚡️ Native -> signInWithEmailAndPassword starting');
+                userCredential = await FirebaseAuthentication.signInWithEmailAndPassword({
+                    email: email.trim(),
+                    password: password.trim(),
+                });
+
+                // Check if email is verified
+                const currentUser = await FirebaseAuthentication.getCurrentUser();
+                if (currentUser.user && !currentUser.user.emailVerified) {
+                    setError('Email not verified. Please check your inbox.');
+                    setLoading(false);
+                    return;
+                }
+
+                // console.log('⚡️ [log] - Native login successful:', userCredential);
+            } else {
+                // Web platform - use dynamic import for Firebase web SDK
+                const { signInWithEmailAndPassword } = await import('firebase/auth');
+                const { auth } = await import('../firebase');
+
+                // console.log('⚡️ Web -> signInWithEmailAndPassword starting');
+                userCredential = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
+                const user = userCredential.user;
+
+                if (!user.emailVerified) {
+                    setError('Email not verified. Please check your inbox.');
+                    setLoading(false);
+                    return;
+                }
+
+                // console.log('⚡️ [log] - Web login successful:', userCredential);
+            }
         } catch (err) {
-            setLoading(false);
-            switch (err.code) {
+            console.error('[Login Error]', err);
+            const code = err?.code;
+
+            switch (code) {
                 case 'auth/invalid-email':
                     setError('Invalid email format.');
                     break;
@@ -54,22 +84,36 @@ export default function Login({ setUser, switchToRegister, switchToForgot, onClo
                     setError('Login failed. Please try again.');
                     break;
             }
+
+            setLoading(false);
         }
     }
 
     async function handleForgotPassword() {
         setResetStatus('');
         setError('');
+
         if (!email.trim()) {
             setError('Please enter your email to reset your password.');
             return;
         }
 
         try {
-            await sendPasswordResetEmail(auth, email.trim());
+            if (Capacitor.isNativePlatform()) {
+                const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+                await FirebaseAuthentication.sendPasswordResetEmail({
+                    email: email.trim(),
+                });
+            } else {
+                const { sendPasswordResetEmail } = await import('firebase/auth');
+                const { auth } = await import('../firebase');
+                await sendPasswordResetEmail(auth, email.trim());
+            }
             setResetStatus('Password reset email sent. Check your inbox.');
         } catch (err) {
-            switch (err.code) {
+            const code = err?.code;
+
+            switch (code) {
                 case 'auth/invalid-email':
                     setError('Invalid email format.');
                     break;
@@ -95,15 +139,7 @@ export default function Login({ setUser, switchToRegister, switchToForgot, onClo
                         marginBottom: '1.25rem',
                     }}
                 >
-                    <img
-                        src="/croppedLogo.png"
-                        alt="Taskly Icon"
-                        style={{
-                            height: '42px',
-                            width: '42px',
-                            objectFit: 'contain',
-                        }}
-                    />
+                    <img src="/croppedLogo.png" alt="Taskly Icon" style={{ height: '42px', width: '42px', objectFit: 'contain' }} />
                     <h1
                         style={{
                             fontSize: '2rem',
